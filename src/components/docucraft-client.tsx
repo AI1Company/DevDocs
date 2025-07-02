@@ -10,20 +10,11 @@ import { MetadataWizard } from '@/components/metadata-wizard';
 import { ContentSection, type Section } from '@/components/docucraft-content-section';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { getProject, createProject, updateProject, Project, AppMetadata, RawSuggestions } from '@/lib/projects';
+import { getProject, createProject, updateProject, Project, AppMetadata, RawSuggestions, ALL_POSSIBLE_SECTIONS } from '@/lib/projects';
 import { suggestAppFeatures } from '@/ai/flows/suggest-app-features';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DocuCraftLogo } from './docucraft-logo';
-
-const defaultSections: Section[] = [
-    { id: 'prd', title: 'Product Requirements Document', content: '' },
-    { id: 'ui-ux-specs', title: 'UI/UX Specs', content: '' },
-    { id: 'user-flows', title: 'User Flows', content: '' },
-    { id: 'feature-list', title: 'Feature List', content: '' },
-    { id: 'tech-stack', title: 'Precise Tech Stack', content: '' },
-    { id: 'api-design', title: 'API Design', content: '' },
-];
 
 export function DocuCraftClient({ projectId }: { projectId: string }) {
   const router = useRouter();
@@ -100,8 +91,25 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
     if(updated) setProject(updated);
   };
 
+  const handleActiveSectionsUpdate = (newActiveIds: string[]) => {
+    if (!project) return;
+
+    const currentSections = project.sections ?? [];
+    const newSections: Section[] = newActiveIds.map(id => {
+        const existingSection = currentSections.find(s => s.id === id);
+        if (existingSection) {
+            return existingSection;
+        }
+        const sectionBlueprint = ALL_POSSIBLE_SECTIONS.find(s => s.id === id)!;
+        return { ...sectionBlueprint, content: '' };
+    });
+
+    const updated = updateProject(project.id, { sections: newSections });
+    if(updated) setProject(updated);
+  };
+
   const metadata = project?.metadata ?? null;
-  const sections = project?.sections ?? (projectId === 'new' ? defaultSections : []);
+  const sections = project?.sections ?? [];
   const rawSuggestions = project?.rawSuggestions ?? null;
   const selectedFeatures = project?.featureSuggestions ?? [];
 
@@ -125,7 +133,7 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
 
   return (
     <SidebarProvider>
-      <DocuCraftSidebar />
+      <DocuCraftSidebar contentSections={sections} />
       <SidebarInset className="flex flex-col">
         <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:h-16 sm:px-6">
           <SidebarTrigger className="md:hidden" />
@@ -142,8 +150,11 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
               onSubmit={handleMetadataUpdate}
               onSuggestionsUpdate={handleSuggestionsUpdate}
               onSelectedFeaturesUpdate={handleSelectedFeaturesUpdate}
+              onActiveSectionsUpdate={handleActiveSectionsUpdate}
               rawSuggestions={rawSuggestions}
               selectedFeatures={selectedFeatures}
+              activeSections={sections}
+              allPossibleSections={ALL_POSSIBLE_SECTIONS}
             />
             {sections.map((section) => (
               <ContentSection

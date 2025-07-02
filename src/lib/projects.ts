@@ -28,6 +28,24 @@ export interface Project {
   lastModified: string;
 }
 
+export const ALL_POSSIBLE_SECTIONS: Omit<Section, 'content'>[] = [
+    { id: 'overview', title: 'App Overview' },
+    { id: 'personas', title: 'User Personas' },
+    { id: 'ui-ux-specs', title: 'UI/UX Specs' },
+    { id: 'user-flows', title: 'User Flows' },
+    { id: 'feature-list', title: 'Feature List' },
+    { id: 'architecture', title: 'Technical Architecture' },
+    { id: 'db-schema', title: 'DB Schema' },
+    { id: 'api-endpoints', title: 'API Endpoints' },
+    { id: 'security', title: 'Security' },
+    { id: 'monetization', title: 'Monetization' },
+    { id: 'marketing', title: 'Marketing Plan' },
+    { id: 'deployment', title: 'Deployment Plan' },
+];
+
+const DEFAULT_SECTION_IDS = ['overview', 'feature-list', 'ui-ux-specs', 'architecture', 'api-endpoints', 'deployment'];
+
+
 const getProjectsFromStorage = (): Project[] => {
   if (typeof window === 'undefined') return [];
   const projectsJson = localStorage.getItem('docuCraftProjects');
@@ -51,17 +69,18 @@ export const getProject = (id: string): Project | undefined => {
 export const createProject = (metadata: AppMetadata, suggestions: RawSuggestions): Project => {
   const projects = getProjectsFromStorage();
   const now = new Date().toISOString();
+  
+  const initialSections: Section[] = ALL_POSSIBLE_SECTIONS
+    .filter(section => DEFAULT_SECTION_IDS.includes(section.id))
+    .map(section => ({
+        ...section,
+        content: '',
+    }));
+
   const newProject: Project = {
     id: `proj_${Date.now()}`,
     metadata,
-    sections: [
-        { id: 'prd', title: 'Product Requirements Document', content: '' },
-        { id: 'ui-ux-specs', title: 'UI/UX Specs', content: '' },
-        { id: 'user-flows', title: 'User Flows', content: '' },
-        { id: 'feature-list', title: 'Feature List', content: '' },
-        { id: 'tech-stack', title: 'Precise Tech Stack', content: '' },
-        { id: 'api-design', title: 'API Design', content: '' },
-    ],
+    sections: initialSections,
     rawSuggestions: suggestions,
     featureSuggestions: suggestions.core, // Default to selecting all core features
     status: 'In Progress',

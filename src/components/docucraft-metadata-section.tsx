@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { suggestAppFeatures } from '@/ai/flows/suggest-app-features';
 import type { AppMetadata, RawSuggestions } from '@/lib/projects';
+import type { Section } from './docucraft-content-section';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,12 +32,15 @@ type MetadataFormProps = {
   onSubmit: (data: AppMetadata) => void;
   onSuggestionsUpdate: (suggestions: RawSuggestions) => void;
   onSelectedFeaturesUpdate: (features: string[]) => void;
+  onActiveSectionsUpdate: (sectionIds: string[]) => void;
   rawSuggestions: RawSuggestions | null;
   selectedFeatures: string[];
+  activeSections: Section[];
+  allPossibleSections: Omit<Section, 'content'>[];
 };
 
-function FeatureCheckbox({ feature, isChecked, onToggle }: { feature: string; isChecked: boolean; onToggle: (checked: boolean) => void }) {
-  const id = `feature-${feature.replace(/\s+/g, '-').toLowerCase()}`;
+function FeatureCheckbox({ feature, isChecked, onToggle, idPrefix }: { feature: string; isChecked: boolean; onToggle: (checked: boolean) => void; idPrefix?: string }) {
+  const id = `${idPrefix}-${feature.replace(/\s+/g, '-').toLowerCase()}`;
   return (
     <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted">
       <Checkbox id={id} checked={isChecked} onCheckedChange={onToggle} />
@@ -50,8 +54,11 @@ export function MetadataSection({
   onSubmit,
   onSuggestionsUpdate,
   onSelectedFeaturesUpdate,
+  onActiveSectionsUpdate,
   rawSuggestions,
-  selectedFeatures
+  selectedFeatures,
+  activeSections,
+  allPossibleSections
 }: MetadataFormProps) {
   const [isLoading, setIsLoading] = React.useState(false);
   const [customFeatureInput, setCustomFeatureInput] = React.useState('');
@@ -106,6 +113,14 @@ export function MetadataSection({
   const handleRemoveCustomFeature = (feature: string) => {
     onSelectedFeaturesUpdate(selectedFeatures.filter((f) => f !== feature));
   };
+
+  const handleSectionToggle = (sectionId: string, isChecked: boolean) => {
+    const activeSectionIds = activeSections.map(s => s.id);
+    const newActiveIds = isChecked
+      ? [...activeSectionIds, sectionId]
+      : activeSectionIds.filter(id => id !== sectionId);
+    onActiveSectionsUpdate(newActiveIds);
+  };
   
   const allAISuggestions = React.useMemo(() => [
     ...(rawSuggestions?.core ?? []),
@@ -113,6 +128,7 @@ export function MetadataSection({
   ], [rawSuggestions]);
 
   const customFeatures = selectedFeatures.filter(f => !allAISuggestions.includes(f));
+  const activeSectionIds = React.useMemo(() => activeSections.map(s => s.id), [activeSections]);
 
   return (
     <>
@@ -178,11 +194,31 @@ export function MetadataSection({
         </CardContent>
       </Card>
 
+      <Card id="structure">
+        <CardHeader>
+          <CardTitle>Document Structure</CardTitle>
+          <CardDescription>Select the sections to include in your project documentation.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2">
+            {allPossibleSections.map((section) => (
+              <FeatureCheckbox
+                key={section.id}
+                idPrefix={`section-${section.id}`}
+                feature={section.title}
+                isChecked={activeSectionIds.includes(section.id)}
+                onToggle={(checked) => handleSectionToggle(section.id, !!checked)}
+              />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       {rawSuggestions && (
         <Card id="features">
           <CardHeader>
             <CardTitle>AI-Suggested Features</CardTitle>
-            <CardDescription>Select the features to include in your project documentation. The full list of selected features will be available in the "Feature List" section.</CardDescription>
+            <CardDescription>Select the features to include. The full list of selected features will be available in the "Feature List" section.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
@@ -192,6 +228,7 @@ export function MetadataSection({
                 {rawSuggestions.core.map((feature) => (
                   <FeatureCheckbox
                     key={feature}
+                    idPrefix="feature"
                     feature={feature}
                     isChecked={selectedFeatures.includes(feature)}
                     onToggle={(checked) => handleFeatureToggle(feature, !!checked)}
@@ -207,6 +244,7 @@ export function MetadataSection({
                 {rawSuggestions.optional.map((feature) => (
                   <FeatureCheckbox
                     key={feature}
+                    idPrefix="feature"
                     feature={feature}
                     isChecked={selectedFeatures.includes(feature)}
                     onToggle={(checked) => handleFeatureToggle(feature, !!checked)}

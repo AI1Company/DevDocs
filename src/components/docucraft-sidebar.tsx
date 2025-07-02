@@ -1,20 +1,33 @@
 import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarSeparator } from '@/components/ui/sidebar';
 import { DocuCraftLogo } from './docucraft-logo';
-import { Cpu, ListChecks, Settings, Code2, ClipboardList, Palette, Waypoints, ArrowLeft } from 'lucide-react';
+import { Settings, Lightbulb, FileText, Users, Palette, Waypoints, ListChecks, Network, Database, Code2, Shield, DollarSign, Megaphone, CloudUpload, ClipboardList, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import type { Section } from './docucraft-content-section';
+import * as React from 'react';
 
-const sections = [
+const staticSections = [
   { id: 'metadata', title: 'Project Setup', icon: Settings },
-  { id: 'features', title: 'AI Suggestions', icon: ListChecks },
-  { id: 'prd', title: 'PRD', icon: ClipboardList },
-  { id: 'ui-ux-specs', title: 'UI/UX Specs', icon: Palette },
-  { id: 'user-flows', title: 'User Flows', icon: Waypoints },
-  { id: 'feature-list', title: 'Feature List', icon: ListChecks },
-  { id: 'tech-stack', title: 'Tech Stack', icon: Cpu },
-  { id: 'api-design', title: 'API Design', icon: Code2 },
+  { id: 'structure', title: 'Document Structure', icon: ListChecks },
+  { id: 'features', title: 'AI Suggestions', icon: Lightbulb },
 ];
 
-export function DocuCraftSidebar() {
+const sectionIcons: Record<string, React.ElementType> = {
+  'overview': FileText,
+  'personas': Users,
+  'ui-ux-specs': Palette,
+  'user-flows': Waypoints,
+  'feature-list': ListChecks,
+  'architecture': Network,
+  'db-schema': Database,
+  'api-endpoints': Code2,
+  'security': Shield,
+  'monetization': DollarSign,
+  'marketing': Megaphone,
+  'deployment': CloudUpload,
+  'default': ClipboardList,
+};
+
+export function DocuCraftSidebar({ contentSections }: { contentSections: Section[] }) {
   const scrollToSection = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -26,7 +39,7 @@ export function DocuCraftSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-          {sections.map((section) => (
+          {staticSections.map((section) => (
             <SidebarMenuItem key={section.id}>
               <SidebarMenuButton
                 onClick={() => scrollToSection(section.id)}
@@ -38,6 +51,22 @@ export function DocuCraftSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
+          <SidebarSeparator />
+          {contentSections.map((section) => {
+             const Icon = sectionIcons[section.id] || sectionIcons.default;
+             return (
+                <SidebarMenuItem key={section.id}>
+                <SidebarMenuButton
+                    onClick={() => scrollToSection(section.id)}
+                    className="w-full justify-start"
+                    variant="ghost"
+                >
+                    <Icon className="h-4 w-4" />
+                    <span>{section.title}</span>
+                </SidebarMenuButton>
+                </SidebarMenuItem>
+             )
+          })}
         </SidebarMenu>
       </SidebarContent>
       <SidebarSeparator />
