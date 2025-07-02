@@ -13,6 +13,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { getProject, createProject, updateProject, Project, AppMetadata, RawSuggestions, ALL_POSSIBLE_SECTIONS, BrandingSettings } from '@/lib/projects';
 import { suggestAppFeatures } from '@/ai/flows/suggest-app-features';
 import { generateContentSection } from '@/ai/flows/generate-content-section';
+import { generateFeatureList } from '@/ai/flows/generate-feature-list';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DocuCraftLogo } from './docucraft-logo';
@@ -24,6 +25,42 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
 
   const [project, setProject] = React.useState<Project | null>(null);
   const [isLoaded, setIsLoaded] = React.useState(false);
+
+  const handleSectionUpdate = React.useCallback((id: string, content: string) => {
+    setProject(currentProject => {
+        if (!currentProject?.id) return currentProject;
+        const newSections = (currentProject.sections ?? []).map((section) =>
+            section.id === id ? { ...section, content } : section
+        );
+        const updated = updateProject(currentProject.id, { sections: newSections });
+        return updated || currentProject;
+    });
+  }, []);
+
+  const regenerateFeatureListContent = React.useCallback(async (projectToUpdate: Project) => {
+    if (!projectToUpdate.sections.find(s => s.id === 'feature-list')) return;
+
+    if (projectToUpdate.featureSuggestions.length === 0) {
+      handleSectionUpdate('feature-list', 'No features selected. Please select features in the "AI-Suggested Features" card to generate this section.');
+      return;
+    }
+    
+    toast({ title: 'Generating feature descriptions...' });
+    try {
+        const result = await generateFeatureList({
+            appMetadata: JSON.stringify(projectToUpdate.metadata),
+            featureNames: projectToUpdate.featureSuggestions,
+        });
+        handleSectionUpdate('feature-list', result.content);
+        toast({
+            title: 'Feature List Updated!',
+            description: 'AI has generated descriptions for your selected features.',
+        });
+    } catch (error) {
+        console.error('Failed to generate feature descriptions', error);
+        toast({ title: 'Failed to update Feature List', variant: 'destructive' });
+    }
+  }, [toast, handleSectionUpdate]);
 
   const generateAndOrUpdateSections = React.useCallback(async (
     projectId: string,
@@ -37,27 +74,26 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
     const sections = projectToUpdate.sections ?? [];
 
     const updatedSectionsPromises = sections.map(async (section) => {
-      // If section is in the list and we either force regeneration OR its content is empty
       if (sectionsToUpdate.includes(section.id) && (forceRegenerate || !section.content)) {
         try {
           const result = await generateContentSection({
             sectionName: section.title,
             appMetadata: JSON.stringify(metadata),
             action: 'fill_info',
-            existingContent: '', // forceRegenerate will ignore existing content anyway
-            completionMode: 'creative', // Default to creative for initial generation
+            existingContent: '',
+            completionMode: 'creative',
             otherSectionsContent: JSON.stringify(sections.filter(s => s.id !== section.id && s.content))
           });
           return { ...section, content: result.content };
         } catch (error) {
           console.error(`Failed to generate content for ${section.title}`, error);
-          if (forceRegenerate) { // only show toast on manual regen
+          if (forceRegenerate) {
             toast({
               title: `Failed to regenerate ${section.title}`,
               variant: 'destructive'
             });
           }
-          return section; // Return original on error
+          return section;
         }
       }
       return section;
@@ -66,7 +102,7 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
     const updatedSections = await Promise.all(updatedSectionsPromises);
     const updated = updateProject(projectId, { sections: updatedSections });
     if(updated) setProject(updated);
-    return updated; // Return the updated project
+    return updated;
   }, [toast]);
 
   React.useEffect(() => {
@@ -80,7 +116,12 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
           const shouldGenerate = searchParams.get('generate') === 'true';
           if (shouldGenerate) {
             router.replace(`/project/${projectId}`, { scroll: false }); 
-            generateAndOrUpdateSections(existingProject.id, existingProject.metadata, ['product-vision', 'overview'], false);
+            generateAndOrUpdateSections(existingProject.id, existingProject.metadata, ['product-vision', 'overview'], false)
+              .then(updatedProject => {
+                if(updatedProject) {
+                  regenerateFeatureListContent(updatedProject);
+                }
+              });
           }
         } else {
           toast({
@@ -93,34 +134,29 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
       }
       setIsLoaded(true);
     }
-  }, [projectId, router, toast, searchParams, generateAndOrUpdateSections]);
+  }, [projectId, router, toast, searchParams, generateAndOrUpdateSections, regenerateFeatureListContent]);
 
-  // This effect applies the project's custom primary color
   React.useEffect(() => {
     const primaryColor = project?.branding?.primaryColor;
     if (primaryColor) {
       document.documentElement.style.setProperty('--primary', primaryColor);
       
-      // Basic logic to decide foreground color based on lightness
       try {
         const lightness = parseInt(primaryColor.split(' ')[2], 10);
         if (lightness > 50) {
-          document.documentElement.style.setProperty('--primary-foreground', '0 0% 10%'); // Dark text for light backgrounds
+          document.documentElement.style.setProperty('--primary-foreground', '0 0% 10%');
         } else {
-          document.documentElement.style.setProperty('--primary-foreground', '0 0% 100%'); // Light text for dark backgrounds
+          document.documentElement.style.setProperty('--primary-foreground', '0 0% 100%');
         }
       } catch (e) {
-        // Fallback if parsing fails
         document.documentElement.style.setProperty('--primary-foreground', '0 0% 100%');
       }
 
     } else {
-      // Clean up when navigating away or no color is set
       document.documentElement.style.removeProperty('--primary');
       document.documentElement.style.removeProperty('--primary-foreground');
     }
 
-    // Cleanup function to run when component unmounts or project changes
     return () => {
       document.documentElement.style.removeProperty('--primary');
       document.documentElement.style.removeProperty('--primary-foreground');
@@ -143,23 +179,44 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
 
   const handleSuggestionsUpdate = (suggestions: RawSuggestions) => {
     if (!project?.id) return;
+    const defaultFeatures = suggestions.core;
     const updated = updateProject(project.id, {
         rawSuggestions: suggestions,
-        featureSuggestions: suggestions.core, // Default to core features
+        featureSuggestions: defaultFeatures,
     });
-    if(updated) setProject(updated);
+    if(updated) {
+      setProject(updated);
+      regenerateFeatureListContent(updated);
+    }
   };
 
   const handleSelectedFeaturesUpdate = (features: string[]) => {
     if (!project?.id) return;
     const updated = updateProject(project.id, { featureSuggestions: features });
-    if(updated) setProject(updated);
+    if(updated) {
+      setProject(updated);
+      regenerateFeatureListContent(updated);
+    }
   };
 
   const handleWizardSubmit = async (data: AppMetadata) => {
     try {
       const suggestions = await suggestAppFeatures(data);
       const newProject = createProject(data, suggestions);
+      
+      // Pre-generate feature list content for a better first-run experience
+      if (newProject.sections.some(s => s.id === 'feature-list') && newProject.featureSuggestions.length > 0) {
+        const result = await generateFeatureList({
+            appMetadata: JSON.stringify(newProject.metadata),
+            featureNames: newProject.featureSuggestions,
+        });
+        const featureSectionIndex = newProject.sections.findIndex(s => s.id === 'feature-list');
+        if (featureSectionIndex > -1) {
+          newProject.sections[featureSectionIndex].content = result.content;
+        }
+        updateProject(newProject.id, { sections: newProject.sections });
+      }
+      
       router.replace(`/project/${newProject.id}?generate=true`);
     } catch (error) {
       console.error('Error during project creation:', error);
@@ -168,17 +225,8 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
         description: 'Could not create project. Please try again.',
         variant: 'destructive',
       });
-      throw error; // Re-throw to allow wizard to stop its loading spinner
+      throw error;
     }
-  };
-
-  const handleSectionUpdate = (id: string, content: string) => {
-    if (!project?.id) return;
-    const newSections = (project.sections ?? []).map((section) =>
-      section.id === id ? { ...section, content } : section
-    );
-    const updated = updateProject(project.id, { sections: newSections });
-    if(updated) setProject(updated);
   };
 
   const handleActiveSectionsUpdate = (newActiveIds: string[]) => {
@@ -222,7 +270,6 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
   const selectedFeatures = project?.featureSuggestions ?? [];
   const branding = project?.branding ?? { logo: '', primaryColor: '' };
 
-
   if (!isLoaded) {
       return (
         <div className="p-6">
@@ -255,7 +302,7 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
         <ScrollArea className="flex-1">
           <main className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-6">
             <MetadataSection
-              key={project?.id} // Add key to force re-render on project change
+              key={project?.id}
               initialData={metadata}
               branding={branding}
               onSubmit={handleMetadataUpdate}
