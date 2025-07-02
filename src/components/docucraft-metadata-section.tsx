@@ -23,23 +23,33 @@ const metadataSchema = z.object({
 });
 
 type MetadataFormProps = {
+  initialData: AppMetadata | null;
   onSubmit: (data: AppMetadata) => void;
   onSuggestions: (suggestions: string[]) => void;
   suggestions: string[];
 };
 
-export function MetadataSection({ onSubmit, onSuggestions, suggestions }: MetadataFormProps) {
+export function MetadataSection({ initialData, onSubmit, onSuggestions, suggestions }: MetadataFormProps) {
   const [isLoading, setIsLoading] = React.useState(false);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof metadataSchema>>({
     resolver: zodResolver(metadataSchema),
-    defaultValues: { name: '', description: '', industry: '' },
+    defaultValues: initialData || { name: '', description: '', industry: '' },
   });
+
+  // Reset form when initialData changes
+  React.useEffect(() => {
+    if (initialData) {
+      form.reset(initialData);
+    } else {
+      form.reset({ name: '', description: '', industry: '' });
+    }
+  }, [initialData, form]);
 
   const handleFormSubmit = async (values: z.infer<typeof metadataSchema>) => {
     setIsLoading(true);
-    onSubmit(values);
+    onSubmit(values); // This will now create or update the project
     try {
       const result = await suggestAppFeatures(values);
       onSuggestions(result.features);
@@ -106,7 +116,7 @@ export function MetadataSection({ onSubmit, onSuggestions, suggestions }: Metada
               />
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? <Loader2 className="animate-spin" /> : <Lightbulb />}
-                <span>{isLoading ? 'Analyzing...' : 'Suggest Features'}</span>
+                <span>{isLoading ? 'Analyzing...' : 'Setup Project & Suggest Features'}</span>
               </Button>
             </form>
           </Form>

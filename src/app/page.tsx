@@ -1,9 +1,9 @@
-import { DocuCraftClient } from '@/components/docucraft-client';
+import { ProjectDashboard } from '@/components/project-dashboard';
 
 export default function Home() {
   return (
     <main>
-      <DocuCraftClient />
+      <ProjectDashboard />
     </main>
   );
 }

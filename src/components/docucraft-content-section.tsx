@@ -23,18 +23,19 @@ type ContentSectionProps = {
   initialContent: string;
   appMetadata: AppMetadata | null;
   onUpdate: (id: string, content: string) => void;
+  disabled?: boolean;
 };
 
-export function ContentSection({ id, title, initialContent, appMetadata, onUpdate }: ContentSectionProps) {
+export function ContentSection({ id, title, initialContent, appMetadata, onUpdate, disabled = false }: ContentSectionProps) {
   const [content, setContent] = React.useState(initialContent);
   const [tone, setTone] = React.useState<'technical' | 'investor-friendly'>('technical');
   const [isLoading, setIsLoading] = React.useState(false);
   const { toast } = useToast();
 
   const handleGenerate = async () => {
-    if (!appMetadata) {
+    if (disabled || !appMetadata) {
       toast({
-        title: 'Metadata required',
+        title: 'Project not set up',
         description: 'Please fill out the project setup form first.',
         variant: 'destructive',
       });
@@ -78,13 +79,14 @@ export function ContentSection({ id, title, initialContent, appMetadata, onUpdat
       <CardContent>
         <div className="grid gap-4">
           <Textarea
-            placeholder={`Enter content for ${title}...`}
+            placeholder={disabled ? "Please set up the project first." : `Enter content for ${title}...`}
             value={content}
             onChange={(e) => {
               setContent(e.target.value);
               onUpdate(id, e.target.value);
             }}
             className="min-h-[200px] text-base"
+            disabled={disabled}
           />
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -93,6 +95,7 @@ export function ContentSection({ id, title, initialContent, appMetadata, onUpdat
                 defaultValue="technical"
                 onValueChange={(value: 'technical' | 'investor-friendly') => setTone(value)}
                 className="flex items-center"
+                disabled={disabled}
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="technical" id={`${id}-technical`} />
@@ -104,7 +107,7 @@ export function ContentSection({ id, title, initialContent, appMetadata, onUpdat
                 </div>
               </RadioGroup>
             </div>
-            <Button onClick={handleGenerate} disabled={isLoading || !appMetadata}>
+            <Button onClick={handleGenerate} disabled={isLoading || disabled || !appMetadata}>
               {isLoading ? (
                 <Loader2 className="animate-spin" />
               ) : (

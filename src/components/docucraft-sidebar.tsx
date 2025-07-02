@@ -1,6 +1,7 @@
-import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
+import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarSeparator } from '@/components/ui/sidebar';
 import { DocuCraftLogo } from './docucraft-logo';
-import { Cpu, ListChecks, Settings, Code2, ClipboardList, Palette, Waypoints } from 'lucide-react';
+import { Cpu, ListChecks, Settings, Code2, ClipboardList, Palette, Waypoints, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 
 const sections = [
   { id: 'metadata', title: 'Project Setup', icon: Settings },
@@ -39,6 +40,19 @@ export function DocuCraftSidebar() {
           ))}
         </SidebarMenu>
       </SidebarContent>
+      <SidebarSeparator />
+      <SidebarFooter>
+        <SidebarMenu>
+            <SidebarMenuItem>
+                <SidebarMenuButton asChild variant="ghost">
+                    <Link href="/">
+                        <ArrowLeft />
+                        <span>Back to Dashboard</span>
+                    </Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   );
 }
