@@ -1,6 +1,6 @@
 import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarSeparator } from '@/components/ui/sidebar';
 import { DocuCraftLogo } from './docucraft-logo';
-import { Settings, Lightbulb, FileText, Users, Palette, Waypoints, ListChecks, Network, Database, Code2, Shield, DollarSign, Megaphone, CloudUpload, ClipboardList, ArrowLeft } from 'lucide-react';
+import { Settings, Lightbulb, FileText, Users, Palette, Waypoints, ListChecks, Network, Database, Code2, Shield, DollarSign, Megaphone, CloudUpload, ClipboardList, ArrowLeft, Eye } from 'lucide-react';
 import Link from 'next/link';
 import type { Section } from './docucraft-content-section';
 import * as React from 'react';
@@ -12,6 +12,7 @@ const staticSections = [
 ];
 
 const sectionIcons: Record<string, React.ElementType> = {
+  'product-vision': Eye,
   'overview': FileText,
   'personas': Users,
   'ui-ux-specs': Palette,

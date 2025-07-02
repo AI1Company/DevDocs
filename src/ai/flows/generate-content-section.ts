@@ -45,7 +45,11 @@ Instructions:
 - If action is "rewrite_investor": Rewrite the "Existing Content" to appeal to investors. Focus on business value, market potential, and return on investment. The tone should be professional and persuasive.
 - If action is "improve": Rewrite the "Existing Content" to improve its clarity, grammar, and overall readability. Fix any mistakes and make the text more engaging.
 
-Based on the specified action, generate the final content below.`,
+Specific guidance for "fill_info" action:
+- If "Section Name" is "Product Vision": Create a compelling and professional vision statement. It should describe the long-term goal and impact of the application, be aspirational, and clearly articulate the core purpose and what the future looks like for the product and its users. The tone should be professional and clear.
+- If "Section Name" is "App Overview": Provide a concise but comprehensive summary. It should cover the core functionality, its primary value proposition, and the intended audience, serving as a high-level introduction. The tone should be professional and clear.
+
+Based on the specified action and section name, generate the final content below.`,
 });
 
 const generateContentSectionFlow = ai.defineFlow(

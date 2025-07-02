@@ -35,6 +35,7 @@ export interface Project {
 }
 
 export const ALL_POSSIBLE_SECTIONS: Omit<Section, 'content'>[] = [
+    { id: 'product-vision', title: 'Product Vision' },
     { id: 'overview', title: 'App Overview' },
     { id: 'personas', title: 'User Personas' },
     { id: 'ui-ux-specs', title: 'UI/UX Specs' },
@@ -49,7 +50,7 @@ export const ALL_POSSIBLE_SECTIONS: Omit<Section, 'content'>[] = [
     { id: 'deployment', title: 'Deployment Plan' },
 ];
 
-const DEFAULT_SECTION_IDS = ['overview', 'feature-list', 'ui-ux-specs', 'architecture', 'api-endpoints', 'deployment'];
+const DEFAULT_SECTION_IDS = ['product-vision', 'overview', 'feature-list', 'ui-ux-specs', 'architecture', 'api-endpoints', 'deployment'];
 
 
 const getProjectsFromStorage = (): Project[] => {

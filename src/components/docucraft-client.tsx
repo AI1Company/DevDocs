@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { DocuCraftSidebar } from '@/components/docucraft-sidebar';
 import { DocuCraftToolbar } from '@/components/docucraft-toolbar';
@@ -12,16 +12,60 @@ import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { getProject, createProject, updateProject, Project, AppMetadata, RawSuggestions, ALL_POSSIBLE_SECTIONS, BrandingSettings } from '@/lib/projects';
 import { suggestAppFeatures } from '@/ai/flows/suggest-app-features';
+import { generateContentSection } from '@/ai/flows/generate-content-section';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DocuCraftLogo } from './docucraft-logo';
 
 export function DocuCraftClient({ projectId }: { projectId: string }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
 
   const [project, setProject] = React.useState<Project | null>(null);
   const [isLoaded, setIsLoaded] = React.useState(false);
+
+  const generateAndOrUpdateSections = React.useCallback(async (
+    projectId: string,
+    metadata: AppMetadata,
+    sectionsToUpdate: string[],
+    forceRegenerate: boolean
+  ) => {
+    const projectToUpdate = getProject(projectId);
+    if (!projectToUpdate) return;
+    
+    const sections = projectToUpdate.sections ?? [];
+
+    const updatedSectionsPromises = sections.map(async (section) => {
+      // If section is in the list and we either force regeneration OR its content is empty
+      if (sectionsToUpdate.includes(section.id) && (forceRegenerate || !section.content)) {
+        try {
+          const result = await generateContentSection({
+            sectionName: section.title,
+            appMetadata: JSON.stringify(metadata),
+            action: 'fill_info',
+            existingContent: '', // forceRegenerate will ignore existing content anyway
+          });
+          return { ...section, content: result.content };
+        } catch (error) {
+          console.error(`Failed to generate content for ${section.title}`, error);
+          if (forceRegenerate) { // only show toast on manual regen
+            toast({
+              title: `Failed to regenerate ${section.title}`,
+              variant: 'destructive'
+            });
+          }
+          return section; // Return original on error
+        }
+      }
+      return section;
+    });
+
+    const updatedSections = await Promise.all(updatedSectionsPromises);
+    const updated = updateProject(projectId, { sections: updatedSections });
+    if(updated) setProject(updated);
+    return updated; // Return the updated project
+  }, [toast]);
 
   React.useEffect(() => {
     if (projectId) {
@@ -31,6 +75,11 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
         const existingProject = getProject(projectId);
         if (existingProject) {
           setProject(existingProject);
+          const shouldGenerate = searchParams.get('generate') === 'true';
+          if (shouldGenerate) {
+            router.replace(`/project/${projectId}`, { scroll: false }); 
+            generateAndOrUpdateSections(existingProject.id, existingProject.metadata, ['product-vision', 'overview'], false);
+          }
         } else {
           toast({
             title: 'Project not found',
@@ -42,7 +91,7 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
       }
       setIsLoaded(true);
     }
-  }, [projectId, router, toast]);
+  }, [projectId, router, toast, searchParams, generateAndOrUpdateSections]);
 
   // This effect applies the project's custom primary color
   React.useEffect(() => {
@@ -109,7 +158,7 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
     try {
       const suggestions = await suggestAppFeatures(data);
       const newProject = createProject(data, suggestions);
-      router.replace(`/project/${newProject.id}`);
+      router.replace(`/project/${newProject.id}?generate=true`);
     } catch (error) {
       console.error('Error during project creation:', error);
       toast({
@@ -145,6 +194,24 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
 
     const updated = updateProject(project.id, { sections: newSections });
     if(updated) setProject(updated);
+  };
+
+  const handleRegenerateInitialSections = async () => {
+    if (!project) return;
+
+    toast({
+        title: 'Generating sections...',
+        description: 'AI is drafting your Product Vision and App Overview.',
+    });
+
+    const updatedProject = await generateAndOrUpdateSections(project.id, project.metadata, ['product-vision', 'overview'], true);
+
+    if (updatedProject) {
+      toast({
+        title: 'Sections Regenerated!',
+        description: 'Product Vision and App Overview have been updated.',
+      });
+    }
   };
 
   const metadata = project?.metadata ?? null;
@@ -194,6 +261,7 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
               onSuggestionsUpdate={handleSuggestionsUpdate}
               onSelectedFeaturesUpdate={handleSelectedFeaturesUpdate}
               onActiveSectionsUpdate={handleActiveSectionsUpdate}
+              onRegenerate={handleRegenerateInitialSections}
               rawSuggestions={rawSuggestions}
               selectedFeatures={selectedFeatures}
               activeSections={sections}

@@ -17,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Lightbulb, Loader2, Plus, X, UploadCloud } from 'lucide-react';
+import { Lightbulb, Loader2, Plus, X, UploadCloud, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -48,6 +48,7 @@ type MetadataFormProps = {
   onSuggestionsUpdate: (suggestions: RawSuggestions) => void;
   onSelectedFeaturesUpdate: (features: string[]) => void;
   onActiveSectionsUpdate: (sectionIds: string[]) => void;
+  onRegenerate: () => Promise<void>;
   rawSuggestions: RawSuggestions | null;
   selectedFeatures: string[];
   activeSections: Section[];
@@ -72,12 +73,14 @@ export function MetadataSection({
   onSuggestionsUpdate,
   onSelectedFeaturesUpdate,
   onActiveSectionsUpdate,
+  onRegenerate,
   rawSuggestions,
   selectedFeatures,
   activeSections,
   allPossibleSections
 }: MetadataFormProps) {
   const [isLoading, setIsLoading] = React.useState(false);
+  const [isRegenerating, setIsRegenerating] = React.useState(false);
   const [customFeatureInput, setCustomFeatureInput] = React.useState('');
   const { toast } = useToast();
 
@@ -109,6 +112,15 @@ export function MetadataSection({
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleRegenerateClick = async () => {
+    setIsRegenerating(true);
+    try {
+      await onRegenerate();
+    } finally {
+      setIsRegenerating(false);
     }
   };
   
@@ -220,10 +232,16 @@ export function MetadataSection({
                   <FormMessage />
                 </FormItem>
               )} />
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? <Loader2 className="animate-spin" /> : <Lightbulb />}
-                <span>{isLoading ? 'Re-analyzing...' : 'Update & Re-suggest Features'}</span>
-              </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button type="submit" disabled={isLoading || isRegenerating}>
+                  {isLoading ? <Loader2 className="animate-spin" /> : <Lightbulb />}
+                  <span>{isLoading ? 'Re-analyzing...' : 'Update & Re-suggest Features'}</span>
+                </Button>
+                <Button type="button" variant="outline" onClick={handleRegenerateClick} disabled={isLoading || isRegenerating}>
+                  {isRegenerating ? <Loader2 className="animate-spin" /> : <Sparkles />}
+                  <span>Regenerate Vision & Overview</span>
+                </Button>
+              </div>
             </form>
           </Form>
         </CardContent>
