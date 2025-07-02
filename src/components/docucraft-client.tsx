@@ -140,7 +140,7 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
           <h1 className="text-lg font-semibold md:text-xl truncate">
             {project ? project.metadata.name : 'New Project'}
           </h1>
-          <DocuCraftToolbar />
+          <DocuCraftToolbar project={project} />
         </header>
         <ScrollArea className="flex-1">
           <main className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-6">
