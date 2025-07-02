@@ -14,7 +14,7 @@ import {z} from 'genkit';
 const GenerateContentSectionInputSchema = z.object({
   sectionName: z.string().describe('The name of the document section.'),
   appMetadata: z.string().describe('The app metadata including name, description, and industry.'),
-  tone: z.enum(['technical', 'investor-friendly']).describe('The desired tone for the content.'),
+  action: z.enum(['improve', 'rewrite_investor', 'fill_info']).describe('The action to perform on the content.'),
   existingContent: z.string().optional().describe('Existing content to improve or expand upon.'),
 });
 export type GenerateContentSectionInput = z.infer<typeof GenerateContentSectionInputSchema>;
@@ -32,21 +32,20 @@ const prompt = ai.definePrompt({
   name: 'generateContentSectionPrompt',
   input: {schema: GenerateContentSectionInputSchema},
   output: {schema: GenerateContentSectionOutputSchema},
-  prompt: `You are an AI expert in generating content for app documentation.
+  prompt: `You are an AI expert in generating content for app documentation. Your task is to process content for a document section.
 
-You will generate content for the following document section:
+Action to perform: {{{action}}}
 Section Name: {{{sectionName}}}
-
-Based on the following app metadata:
-{{{appMetadata}}}
-
-Desired Tone: {{{tone}}}
-
-Existing Content (if any, improve or expand upon it):
+App Metadata: {{{appMetadata}}}
+Existing Content:
 {{{existingContent}}}
 
-Generate content that is well-written, engaging, and appropriate for the specified tone and document section.  Pay close attention to grammar and sentence construction.
-`, 
+Instructions:
+- If action is "fill_info": Generate content for the section. If "Existing Content" is provided, expand on it. If not, create it from scratch using the "App Metadata".
+- If action is "rewrite_investor": Rewrite the "Existing Content" to appeal to investors. Focus on business value, market potential, and return on investment. The tone should be professional and persuasive.
+- If action is "improve": Rewrite the "Existing Content" to improve its clarity, grammar, and overall readability. Fix any mistakes and make the text more engaging.
+
+Based on the specified action, generate the final content below.`,
 });
 
 const generateContentSectionFlow = ai.defineFlow(
