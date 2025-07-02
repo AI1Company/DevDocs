@@ -17,6 +17,11 @@ export type RawSuggestions = {
 
 export type ProjectStatus = 'In Progress' | 'Completed';
 
+export type BrandingSettings = {
+  logo?: string; // data URL
+  primaryColor?: string; // HSL string e.g., "262 52% 50%"
+};
+
 export interface Project {
   id: string;
   metadata: AppMetadata;
@@ -26,6 +31,7 @@ export interface Project {
   status: ProjectStatus;
   createdAt: string;
   lastModified: string;
+  branding?: BrandingSettings;
 }
 
 export const ALL_POSSIBLE_SECTIONS: Omit<Section, 'content'>[] = [
@@ -86,6 +92,10 @@ export const createProject = (metadata: AppMetadata, suggestions: RawSuggestions
     status: 'In Progress',
     createdAt: now,
     lastModified: now,
+    branding: {
+        logo: '',
+        primaryColor: ''
+    }
   };
   const updatedProjects = [...projects, newProject];
   saveProjectsToStorage(updatedProjects);

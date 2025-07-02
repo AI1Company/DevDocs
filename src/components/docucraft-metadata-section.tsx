@@ -1,11 +1,12 @@
 "use client";
 
 import * as React from 'react';
+import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { suggestAppFeatures } from '@/ai/flows/suggest-app-features';
-import type { AppMetadata, RawSuggestions } from '@/lib/projects';
+import type { AppMetadata, RawSuggestions, BrandingSettings } from '@/lib/projects';
 import type { Section } from './docucraft-content-section';
 
 import { Button } from '@/components/ui/button';
@@ -16,8 +17,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Lightbulb, Loader2, Plus, X } from 'lucide-react';
+import { Lightbulb, Loader2, Plus, X, UploadCloud } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+
 
 const metadataSchema = z.object({
   name: z.string().min(2, 'App name must be at least 2 characters.'),
@@ -27,9 +30,21 @@ const metadataSchema = z.object({
   platform: z.enum(['Web', 'Mobile', 'SaaS', 'Desktop']),
 });
 
+// Predefined color swatches in HSL string format ("H S% L%")
+const colorSwatches = [
+  { name: 'Default', value: '262 52% 50%' },
+  { name: 'Red', value: '0 72% 51%' },
+  { name: 'Orange', value: '25 95% 53%' },
+  { name: 'Green', value: '142 76% 36%' },
+  { name: 'Blue', value: '221 83% 53%' },
+  { name: 'Slate', value: '215 28% 17%' },
+];
+
 type MetadataFormProps = {
   initialData: AppMetadata | null;
+  branding: BrandingSettings;
   onSubmit: (data: AppMetadata) => void;
+  onBrandingUpdate: (data: BrandingSettings) => void;
   onSuggestionsUpdate: (suggestions: RawSuggestions) => void;
   onSelectedFeaturesUpdate: (features: string[]) => void;
   onActiveSectionsUpdate: (sectionIds: string[]) => void;
@@ -51,7 +66,9 @@ function FeatureCheckbox({ feature, isChecked, onToggle, idPrefix }: { feature: 
 
 export function MetadataSection({
   initialData,
+  branding,
   onSubmit,
+  onBrandingUpdate,
   onSuggestionsUpdate,
   onSelectedFeaturesUpdate,
   onActiveSectionsUpdate,
@@ -94,6 +111,24 @@ export function MetadataSection({
       setIsLoading(false);
     }
   };
+  
+  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        onBrandingUpdate({ ...branding, logo: reader.result as string });
+        toast({ title: "Logo updated!" });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleColorSelect = (color: string) => {
+    const newColor = branding.primaryColor === color ? '' : color; // Unset if same color is clicked
+    onBrandingUpdate({ ...branding, primaryColor: newColor });
+  };
+
 
   const handleFeatureToggle = (feature: string, isChecked: boolean) => {
     const newSelected = isChecked
@@ -194,6 +229,48 @@ export function MetadataSection({
         </CardContent>
       </Card>
 
+      <Card id="branding">
+        <CardHeader>
+          <CardTitle>Branding & Appearance</CardTitle>
+          <CardDescription>Customize the look of your project and exports.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div>
+            <Label htmlFor="logo-upload">Project Logo</Label>
+            <div className="flex items-center gap-4 mt-2">
+              <div className="w-20 h-20 rounded-md border border-dashed flex items-center justify-center bg-muted">
+                {branding.logo ? (
+                  <Image src={branding.logo} alt="Project Logo" width={80} height={80} className="object-contain rounded-md" />
+                ) : (
+                  <UploadCloud className="w-8 h-8 text-muted-foreground" />
+                )}
+              </div>
+              <div className="flex-1">
+                <Input id="logo-upload" type="file" accept="image/png, image/jpeg, image/svg+xml" onChange={handleLogoUpload} className="max-w-xs" />
+                <p className="text-xs text-muted-foreground mt-1">Recommended: Square image (PNG, JPG, SVG).</p>
+              </div>
+            </div>
+          </div>
+          <div>
+            <Label>Primary Color</Label>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {colorSwatches.map((swatch) => (
+                <button
+                  key={swatch.name}
+                  title={swatch.name}
+                  onClick={() => handleColorSelect(swatch.value)}
+                  className={cn(
+                    "h-8 w-8 rounded-full border-2 transition-transform",
+                    branding.primaryColor === swatch.value ? 'border-ring scale-110' : 'border-muted hover:border-muted-foreground/50'
+                  )}
+                  style={{ backgroundColor: `hsl(${swatch.value})` }}
+                />
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
       <Card id="structure">
         <CardHeader>
           <CardTitle>Document Structure</CardTitle>

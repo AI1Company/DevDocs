@@ -10,7 +10,7 @@ import { MetadataWizard } from '@/components/metadata-wizard';
 import { ContentSection, type Section } from '@/components/docucraft-content-section';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { getProject, createProject, updateProject, Project, AppMetadata, RawSuggestions, ALL_POSSIBLE_SECTIONS } from '@/lib/projects';
+import { getProject, createProject, updateProject, Project, AppMetadata, RawSuggestions, ALL_POSSIBLE_SECTIONS, BrandingSettings } from '@/lib/projects';
 import { suggestAppFeatures } from '@/ai/flows/suggest-app-features';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -44,9 +44,48 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
     }
   }, [projectId, router, toast]);
 
+  // This effect applies the project's custom primary color
+  React.useEffect(() => {
+    const primaryColor = project?.branding?.primaryColor;
+    if (primaryColor) {
+      document.documentElement.style.setProperty('--primary', primaryColor);
+      
+      // Basic logic to decide foreground color based on lightness
+      try {
+        const lightness = parseInt(primaryColor.split(' ')[2], 10);
+        if (lightness > 50) {
+          document.documentElement.style.setProperty('--primary-foreground', '0 0% 10%'); // Dark text for light backgrounds
+        } else {
+          document.documentElement.style.setProperty('--primary-foreground', '0 0% 100%'); // Light text for dark backgrounds
+        }
+      } catch (e) {
+        // Fallback if parsing fails
+        document.documentElement.style.setProperty('--primary-foreground', '0 0% 100%');
+      }
+
+    } else {
+      // Clean up when navigating away or no color is set
+      document.documentElement.style.removeProperty('--primary');
+      document.documentElement.style.removeProperty('--primary-foreground');
+    }
+
+    // Cleanup function to run when component unmounts or project changes
+    return () => {
+      document.documentElement.style.removeProperty('--primary');
+      document.documentElement.style.removeProperty('--primary-foreground');
+    };
+  }, [project?.branding?.primaryColor]);
+
   const handleMetadataUpdate = (data: AppMetadata) => {
     if (project) {
         const updated = updateProject(project.id, { metadata: data });
+        if(updated) setProject(updated);
+    }
+  };
+  
+  const handleBrandingUpdate = (branding: BrandingSettings) => {
+    if (project) {
+        const updated = updateProject(project.id, { branding });
         if(updated) setProject(updated);
     }
   };
@@ -112,6 +151,8 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
   const sections = project?.sections ?? [];
   const rawSuggestions = project?.rawSuggestions ?? null;
   const selectedFeatures = project?.featureSuggestions ?? [];
+  const branding = project?.branding ?? { logo: '', primaryColor: '' };
+
 
   if (!isLoaded) {
       return (
@@ -147,7 +188,9 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
             <MetadataSection
               key={project?.id} // Add key to force re-render on project change
               initialData={metadata}
+              branding={branding}
               onSubmit={handleMetadataUpdate}
+              onBrandingUpdate={handleBrandingUpdate}
               onSuggestionsUpdate={handleSuggestionsUpdate}
               onSelectedFeaturesUpdate={handleSelectedFeaturesUpdate}
               onActiveSectionsUpdate={handleActiveSectionsUpdate}

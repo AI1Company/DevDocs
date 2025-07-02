@@ -7,6 +7,7 @@ import { getProjects, deleteProject, renameProject, Project } from '@/lib/projec
 import { ProjectCard } from './project-card';
 import { Button } from '@/components/ui/button';
 import { DocuCraftLogo } from './docucraft-logo';
+import { ThemeToggle } from './theme-toggle';
 
 export function ProjectDashboard() {
   const [projects, setProjects] = React.useState<Project[]>([]);
@@ -30,18 +31,19 @@ export function ProjectDashboard() {
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
       <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 py-4">
         <DocuCraftLogo />
+        <div className="ml-auto flex items-center gap-4">
+            <ThemeToggle />
+            <Button asChild>
+                <Link href="/project/new">
+                    <PlusCircle className="h-4 w-4" />
+                    Create New Project
+                </Link>
+            </Button>
+        </div>
       </header>
       <main className="flex flex-1 flex-col gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
         <div className="flex items-center">
             <h1 className="text-lg font-semibold md:text-2xl">Your Projects</h1>
-            <div className="ml-auto flex items-center gap-2">
-                <Button asChild>
-                    <Link href="/project/new">
-                        <PlusCircle className="h-4 w-4" />
-                        Create New Project
-                    </Link>
-                </Button>
-            </div>
         </div>
         
         {projects.length > 0 ? (
