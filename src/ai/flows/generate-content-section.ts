@@ -16,6 +16,8 @@ const GenerateContentSectionInputSchema = z.object({
   appMetadata: z.string().describe('The app metadata including name, description, and industry.'),
   action: z.enum(['improve', 'rewrite_investor', 'fill_info']).describe('The action to perform on the content.'),
   existingContent: z.string().optional().describe('Existing content to improve or expand upon.'),
+  completionMode: z.enum(['strict', 'creative']).describe('The mode for content generation. "strict" for factual, "creative" for embellished.'),
+  otherSectionsContent: z.string().optional().describe('JSON string of other completed sections to provide context.'),
 });
 export type GenerateContentSectionInput = z.infer<typeof GenerateContentSectionInputSchema>;
 
@@ -32,24 +34,31 @@ const prompt = ai.definePrompt({
   name: 'generateContentSectionPrompt',
   input: {schema: GenerateContentSectionInputSchema},
   output: {schema: GenerateContentSectionOutputSchema},
-  prompt: `You are an AI expert in generating content for app documentation. Your task is to process content for a document section.
+  prompt: `You are an AI expert in generating content for app documentation. Your task is to process content for a document section, using the provided context from other completed sections.
 
 Action to perform: {{{action}}}
+Completion Mode: {{{completionMode}}}
 Section Name: {{{sectionName}}}
 App Metadata: {{{appMetadata}}}
 Existing Content:
 {{{existingContent}}}
+Context from other sections:
+{{{otherSectionsContent}}}
 
 Instructions:
-- If action is "fill_info": Generate content for the section. If "Existing Content" is provided, expand on it. If not, create it from scratch using the "App Metadata".
+- If action is "fill_info": Generate content for the section. If "Existing Content" is provided, expand on it. If not, create it from scratch using the "App Metadata" and context from other sections.
 - If action is "rewrite_investor": Rewrite the "Existing Content" to appeal to investors. Focus on business value, market potential, and return on investment. The tone should be professional and persuasive.
 - If action is "improve": Rewrite the "Existing Content" to improve its clarity, grammar, and overall readability. Fix any mistakes and make the text more engaging.
+
+Completion Mode Guidance:
+- If completion mode is "strict": Be factual and concise. Stick closely to the provided metadata and context. Avoid making assumptions or adding speculative details.
+- If completion mode is "creative": Be more descriptive and engaging. You can make reasonable, intelligent inferences based on the app's concept to flesh out the content and make it more comprehensive.
 
 Specific guidance for "fill_info" action:
 - If "Section Name" is "Product Vision": Create a compelling and professional vision statement. It should describe the long-term goal and impact of the application, be aspirational, and clearly articulate the core purpose and what the future looks like for the product and its users. The tone should be professional and clear.
 - If "Section Name" is "App Overview": Provide a concise but comprehensive summary. It should cover the core functionality, its primary value proposition, and the intended audience, serving as a high-level introduction. The tone should be professional and clear.
 
-Based on the specified action and section name, generate the final content below.`,
+Based on the specified action, completion mode, and section name, generate the final content below.`,
 });
 
 const generateContentSectionFlow = ai.defineFlow(

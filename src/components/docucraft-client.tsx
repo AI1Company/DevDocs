@@ -45,6 +45,8 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
             appMetadata: JSON.stringify(metadata),
             action: 'fill_info',
             existingContent: '', // forceRegenerate will ignore existing content anyway
+            completionMode: 'creative', // Default to creative for initial generation
+            otherSectionsContent: JSON.stringify(sections.filter(s => s.id !== section.id && s.content))
           });
           return { ...section, content: result.content };
         } catch (error) {
@@ -276,6 +278,7 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
                 appMetadata={metadata}
                 onUpdate={handleSectionUpdate}
                 disabled={!project}
+                sections={sections}
               />
             ))}
           </main>
