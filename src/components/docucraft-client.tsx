@@ -10,7 +10,7 @@ import { MetadataWizard } from '@/components/metadata-wizard';
 import { ContentSection, type Section } from '@/components/docucraft-content-section';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { getProject, createProject, updateProject, Project, AppMetadata } from '@/lib/projects';
+import { getProject, createProject, updateProject, Project, AppMetadata, RawSuggestions } from '@/lib/projects';
 import { suggestAppFeatures } from '@/ai/flows/suggest-app-features';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -60,16 +60,25 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
     }
   };
 
-  const handleSuggestionsUpdate = (suggestions: string[]) => {
+  const handleSuggestionsUpdate = (suggestions: RawSuggestions) => {
     if (!project?.id) return;
-    const updated = updateProject(project.id, { featureSuggestions: suggestions });
+    const updated = updateProject(project.id, {
+        rawSuggestions: suggestions,
+        featureSuggestions: suggestions.core, // Default to core features
+    });
+    if(updated) setProject(updated);
+  };
+
+  const handleSelectedFeaturesUpdate = (features: string[]) => {
+    if (!project?.id) return;
+    const updated = updateProject(project.id, { featureSuggestions: features });
     if(updated) setProject(updated);
   };
 
   const handleWizardSubmit = async (data: AppMetadata) => {
     try {
-      const { features } = await suggestAppFeatures(data);
-      const newProject = createProject(data, features);
+      const suggestions = await suggestAppFeatures(data);
+      const newProject = createProject(data, suggestions);
       router.replace(`/project/${newProject.id}`);
     } catch (error) {
       console.error('Error during project creation:', error);
@@ -93,7 +102,8 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
 
   const metadata = project?.metadata ?? null;
   const sections = project?.sections ?? (projectId === 'new' ? defaultSections : []);
-  const featureSuggestions = project?.featureSuggestions ?? [];
+  const rawSuggestions = project?.rawSuggestions ?? null;
+  const selectedFeatures = project?.featureSuggestions ?? [];
 
   if (!isLoaded) {
       return (
@@ -130,8 +140,10 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
               key={project?.id} // Add key to force re-render on project change
               initialData={metadata}
               onSubmit={handleMetadataUpdate}
-              onSuggestions={handleSuggestionsUpdate}
-              suggestions={featureSuggestions}
+              onSuggestionsUpdate={handleSuggestionsUpdate}
+              onSelectedFeaturesUpdate={handleSelectedFeaturesUpdate}
+              rawSuggestions={rawSuggestions}
+              selectedFeatures={selectedFeatures}
             />
             {sections.map((section) => (
               <ContentSection

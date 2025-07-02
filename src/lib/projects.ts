@@ -10,13 +10,19 @@ export type AppMetadata = {
   platform: 'Web' | 'Mobile' | 'SaaS' | 'Desktop';
 };
 
+export type RawSuggestions = {
+  core: string[];
+  optional: string[];
+};
+
 export type ProjectStatus = 'In Progress' | 'Completed';
 
 export interface Project {
   id: string;
   metadata: AppMetadata;
   sections: Section[];
-  featureSuggestions: string[];
+  featureSuggestions: string[]; // This will hold the SELECTED features.
+  rawSuggestions?: RawSuggestions;
   status: ProjectStatus;
   createdAt: string;
   lastModified: string;
@@ -42,7 +48,7 @@ export const getProject = (id: string): Project | undefined => {
   return projects.find((p) => p.id === id);
 };
 
-export const createProject = (metadata: AppMetadata, suggestions: string[] = []): Project => {
+export const createProject = (metadata: AppMetadata, suggestions: RawSuggestions): Project => {
   const projects = getProjectsFromStorage();
   const now = new Date().toISOString();
   const newProject: Project = {
@@ -56,7 +62,8 @@ export const createProject = (metadata: AppMetadata, suggestions: string[] = [])
         { id: 'tech-stack', title: 'Precise Tech Stack', content: '' },
         { id: 'api-design', title: 'API Design', content: '' },
     ],
-    featureSuggestions: suggestions,
+    rawSuggestions: suggestions,
+    featureSuggestions: suggestions.core, // Default to selecting all core features
     status: 'In Progress',
     createdAt: now,
     lastModified: now,

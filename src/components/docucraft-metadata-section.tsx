@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { suggestAppFeatures } from '@/ai/flows/suggest-app-features';
-import type { AppMetadata } from '@/lib/projects';
+import type { AppMetadata, RawSuggestions } from '@/lib/projects';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,8 +13,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Lightbulb, Loader2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Lightbulb, Loader2, Plus, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const metadataSchema = z.object({
@@ -28,12 +29,32 @@ const metadataSchema = z.object({
 type MetadataFormProps = {
   initialData: AppMetadata | null;
   onSubmit: (data: AppMetadata) => void;
-  onSuggestions: (suggestions: string[]) => void;
-  suggestions: string[];
+  onSuggestionsUpdate: (suggestions: RawSuggestions) => void;
+  onSelectedFeaturesUpdate: (features: string[]) => void;
+  rawSuggestions: RawSuggestions | null;
+  selectedFeatures: string[];
 };
 
-export function MetadataSection({ initialData, onSubmit, onSuggestions, suggestions }: MetadataFormProps) {
+function FeatureCheckbox({ feature, isChecked, onToggle }: { feature: string; isChecked: boolean; onToggle: (checked: boolean) => void }) {
+  const id = `feature-${feature.replace(/\s+/g, '-').toLowerCase()}`;
+  return (
+    <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted">
+      <Checkbox id={id} checked={isChecked} onCheckedChange={onToggle} />
+      <Label htmlFor={id} className="font-normal cursor-pointer flex-1">{feature}</Label>
+    </div>
+  );
+}
+
+export function MetadataSection({
+  initialData,
+  onSubmit,
+  onSuggestionsUpdate,
+  onSelectedFeaturesUpdate,
+  rawSuggestions,
+  selectedFeatures
+}: MetadataFormProps) {
   const [isLoading, setIsLoading] = React.useState(false);
+  const [customFeatureInput, setCustomFeatureInput] = React.useState('');
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof metadataSchema>>({
@@ -50,7 +71,7 @@ export function MetadataSection({ initialData, onSubmit, onSuggestions, suggesti
     onSubmit(values); // This will update the project metadata
     try {
       const result = await suggestAppFeatures(values);
-      onSuggestions(result.features);
+      onSuggestionsUpdate(result);
       toast({
         title: 'Project Updated',
         description: 'Metadata and feature suggestions have been refreshed.',
@@ -66,6 +87,32 @@ export function MetadataSection({ initialData, onSubmit, onSuggestions, suggesti
       setIsLoading(false);
     }
   };
+
+  const handleFeatureToggle = (feature: string, isChecked: boolean) => {
+    const newSelected = isChecked
+      ? [...selectedFeatures, feature]
+      : selectedFeatures.filter((f) => f !== feature);
+    onSelectedFeaturesUpdate(newSelected);
+  };
+
+  const handleAddCustomFeature = () => {
+    const trimmedInput = customFeatureInput.trim();
+    if (trimmedInput && !selectedFeatures.includes(trimmedInput)) {
+      onSelectedFeaturesUpdate([...selectedFeatures, trimmedInput]);
+      setCustomFeatureInput('');
+    }
+  };
+
+  const handleRemoveCustomFeature = (feature: string) => {
+    onSelectedFeaturesUpdate(selectedFeatures.filter((f) => f !== feature));
+  };
+  
+  const allAISuggestions = React.useMemo(() => [
+    ...(rawSuggestions?.core ?? []),
+    ...(rawSuggestions?.optional ?? [])
+  ], [rawSuggestions]);
+
+  const customFeatures = selectedFeatures.filter(f => !allAISuggestions.includes(f));
 
   return (
     <>
@@ -131,19 +178,69 @@ export function MetadataSection({ initialData, onSubmit, onSuggestions, suggesti
         </CardContent>
       </Card>
 
-      {suggestions.length > 0 && (
+      {rawSuggestions && (
         <Card id="features">
           <CardHeader>
             <CardTitle>AI-Suggested Features</CardTitle>
-            <CardDescription>Here are some features our AI thinks would be a great fit for your app.</CardDescription>
+            <CardDescription>Select the features to include in your project documentation. The full list of selected features will be available in the "Feature List" section.</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {suggestions.map((feature, index) => (
-                <Badge key={index} variant="secondary" className="text-sm">
-                  {feature}
-                </Badge>
-              ))}
+          <CardContent className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Core Features</h3>
+              <CardDescription>Essential features for your application. These are selected by default.</CardDescription>
+              <div className="grid md:grid-cols-2 gap-x-4 gap-y-2 mt-4">
+                {rawSuggestions.core.map((feature) => (
+                  <FeatureCheckbox
+                    key={feature}
+                    feature={feature}
+                    isChecked={selectedFeatures.includes(feature)}
+                    onToggle={(checked) => handleFeatureToggle(feature, !!checked)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Optional Features</h3>
+              <CardDescription>Nice-to-have features that could enhance your app.</CardDescription>
+              <div className="grid md:grid-cols-2 gap-x-4 gap-y-2 mt-4">
+                {rawSuggestions.optional.map((feature) => (
+                  <FeatureCheckbox
+                    key={feature}
+                    feature={feature}
+                    isChecked={selectedFeatures.includes(feature)}
+                    onToggle={(checked) => handleFeatureToggle(feature, !!checked)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div>
+                <h3 className="text-lg font-semibold mb-2">Custom Features</h3>
+                <CardDescription>Manually added features for your project.</CardDescription>
+                <div className="space-y-2 mt-4">
+                    {customFeatures.map((feature) => (
+                        <div key={feature} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
+                            <Label className="font-normal">{feature}</Label>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleRemoveCustomFeature(feature)}>
+                                <X className="h-4 w-4" />
+                                <span className="sr-only">Remove feature</span>
+                            </Button>
+                        </div>
+                    ))}
+                    {customFeatures.length === 0 && <p className="text-sm text-muted-foreground pt-2">No custom features added yet.</p>}
+                </div>
+                <div className="flex items-center gap-2 mt-4">
+                    <Input
+                        placeholder="Add a custom feature..."
+                        value={customFeatureInput}
+                        onChange={(e) => setCustomFeatureInput(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddCustomFeature(); } }}
+                    />
+                    <Button onClick={handleAddCustomFeature} type="button">
+                        <Plus /> Add Feature
+                    </Button>
+                </div>
             </div>
           </CardContent>
         </Card>

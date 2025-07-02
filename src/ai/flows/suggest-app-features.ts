@@ -22,7 +22,8 @@ const SuggestAppFeaturesInputSchema = z.object({
 export type SuggestAppFeaturesInput = z.infer<typeof SuggestAppFeaturesInputSchema>;
 
 const SuggestAppFeaturesOutputSchema = z.object({
-  features: z.array(z.string()).describe('A list of suggested features for the application.'),
+  core: z.array(z.string()).describe('A list of 3-5 essential core features for the application.'),
+  optional: z.array(z.string()).describe('A list of 3-5 optional or nice-to-have features that could enhance the app.'),
 });
 export type SuggestAppFeaturesOutput = z.infer<typeof SuggestAppFeaturesOutputSchema>;
 
@@ -42,8 +43,8 @@ const prompt = ai.definePrompt({
   Target Users: {{{targetUsers}}}
   Platform: {{{platform}}}
 
-  Suggest a list of relevant and useful features for this application. The features should be concise, easy to understand, and tailored to the provided application details.
-  Return the features as a JSON array of strings.
+  Suggest a list of relevant and useful features for this application. Categorize them into "core" (essential features) and "optional" (nice-to-have features). The features should be concise and easy to understand.
+  Return the features as a JSON object with 'core' and 'optional' keys, each containing an array of strings.
   `,
 });
 
