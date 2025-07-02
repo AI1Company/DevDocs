@@ -8,9 +8,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Sparkles, Briefcase, BrainCircuit } from 'lucide-react';
+import { Loader2, PenLine, BrainCircuit } from 'lucide-react';
 import type { AppMetadata } from '@/lib/projects';
 import { useToast } from '@/hooks/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 
 export type Section = {
   id: string;
@@ -28,12 +30,15 @@ type ContentSectionProps = {
   disabled?: boolean;
 };
 
-type ActionType = 'improve' | 'rewrite_investor' | 'fill_info';
+type ActionType = 'rewrite_technical' | 'rewrite_friendly' | 'rewrite_pitch' | 'rewrite_instructional' | 'fill_info';
+type RewriteTone = 'technical' | 'friendly' | 'pitch' | 'instructional';
+
 
 export function ContentSection({ id, title, initialContent, appMetadata, sections, onUpdate, disabled = false }: ContentSectionProps) {
   const [content, setContent] = React.useState(initialContent);
   const [loadingAction, setLoadingAction] = React.useState<ActionType | null>(null);
   const [completionMode, setCompletionMode] = React.useState<'strict' | 'creative'>('creative');
+  const [rewriteTone, setRewriteTone] = React.useState<RewriteTone>('friendly');
   const { toast } = useToast();
   const isLoading = loadingAction !== null;
 
@@ -80,6 +85,10 @@ export function ContentSection({ id, title, initialContent, appMetadata, section
     }
   };
 
+  const handleRewrite = () => {
+    handleGenerate(`rewrite_${rewriteTone}` as ActionType);
+  }
+
   React.useEffect(() => {
     setContent(initialContent);
   }, [initialContent]);
@@ -118,14 +127,27 @@ export function ContentSection({ id, title, initialContent, appMetadata, section
                 </Label>
               </div>
               <div className="flex flex-wrap items-center justify-end gap-2">
-                <Button onClick={() => handleGenerate('improve')} disabled={isLoading || disabled || !appMetadata || !content}>
-                  {loadingAction === 'improve' ? <Loader2 className="animate-spin" /> : <Sparkles />}
-                  Improve
-                </Button>
-                <Button onClick={() => handleGenerate('rewrite_investor')} disabled={isLoading || disabled || !appMetadata || !content}>
-                  {loadingAction === 'rewrite_investor' ? <Loader2 className="animate-spin" /> : <Briefcase />}
-                  For Investors
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={rewriteTone}
+                    onValueChange={(value: RewriteTone) => setRewriteTone(value)}
+                    disabled={isLoading || disabled || !content}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Select a tone" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="friendly">Friendly</SelectItem>
+                      <SelectItem value="technical">Technical</SelectItem>
+                      <SelectItem value="pitch">Pitch (for Investors)</SelectItem>
+                      <SelectItem value="instructional">Instructional</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button onClick={handleRewrite} disabled={isLoading || disabled || !appMetadata || !content}>
+                    {loadingAction?.startsWith('rewrite_') ? <Loader2 className="animate-spin" /> : <PenLine />}
+                    Rewrite
+                  </Button>
+                </div>
                 <Button onClick={() => handleGenerate('fill_info')} disabled={isLoading || disabled || !appMetadata}>
                   {loadingAction === 'fill_info' ? <Loader2 className="animate-spin" /> : <BrainCircuit />}
                   {content ? 'Expand with AI' : 'Suggest with AI'}
