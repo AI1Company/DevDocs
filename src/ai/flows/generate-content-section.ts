@@ -18,6 +18,7 @@ const GenerateContentSectionInputSchema = z.object({
   existingContent: z.string().optional().describe('Existing content to improve or expand upon.'),
   completionMode: z.enum(['strict', 'creative']).describe('The mode for content generation. "strict" for factual, "creative" for embellished.'),
   otherSectionsContent: z.string().optional().describe('JSON string of other completed sections to provide context.'),
+  personas: z.string().optional().describe('JSON string of generated user personas to provide context.'),
 });
 export type GenerateContentSectionInput = z.infer<typeof GenerateContentSectionInputSchema>;
 
@@ -34,19 +35,24 @@ const prompt = ai.definePrompt({
   name: 'generateContentSectionPrompt',
   input: {schema: GenerateContentSectionInputSchema},
   output: {schema: GenerateContentSectionOutputSchema},
-  prompt: `You are an AI expert in generating content for app documentation. Your task is to process content for a document section, using the provided context from other completed sections.
+  prompt: `You are an AI expert in generating content for app documentation. Your task is to process content for a document section, using the provided context from other completed sections and user personas.
 
 Action to perform: {{{action}}}
 Completion Mode: {{{completionMode}}}
 Section Name: {{{sectionName}}}
 App Metadata: {{{appMetadata}}}
-Existing Content:
-{{{existingContent}}}
+{{#if personas}}
+Context from User Personas:
+{{{personas}}}
+{{/if}}
 Context from other sections:
 {{{otherSectionsContent}}}
 
+Existing Content:
+{{{existingContent}}}
+
 Instructions:
-- If action is "fill_info": Generate content for the section. If "Existing Content" is provided, expand on it. If not, create it from scratch using the "App Metadata" and context from other sections.
+- If action is "fill_info": Generate content for the section. If "Existing Content" is provided, expand on it. If not, create it from scratch using the "App Metadata" and context from other sections and personas.
 - If action is "rewrite_technical": Rewrite the "Existing Content" for a technical audience, like a development team. Be precise, use appropriate technical jargon, and focus on implementation details and system logic.
 - If action is "rewrite_friendly": Rewrite the "Existing Content" for non-technical clients. The tone should be simple, welcoming, and clear. Avoid jargon and focus on the benefits and how to use the feature.
 - If action is "rewrite_pitch": Rewrite the "Existing Content" to appeal to investors. Focus on business value, market potential, and return on investment. The tone should be professional and persuasive.

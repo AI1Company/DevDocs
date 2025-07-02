@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, PenLine, BrainCircuit, Sparkles } from 'lucide-react';
-import type { AppMetadata } from '@/lib/projects';
+import type { AppMetadata, Persona } from '@/lib/projects';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
@@ -37,13 +37,14 @@ type ContentSectionProps = {
   sections: Section[];
   onUpdate: (id: string, content: string) => void;
   disabled?: boolean;
+  personas: Persona[];
 };
 
 type ActionType = 'rewrite_technical' | 'rewrite_friendly' | 'rewrite_pitch' | 'rewrite_instructional' | 'fill_info';
 type RewriteTone = 'technical' | 'friendly' | 'pitch' | 'instructional';
 
 
-export function ContentSection({ id, title, initialContent, appMetadata, sections, onUpdate, disabled = false }: ContentSectionProps) {
+export function ContentSection({ id, title, initialContent, appMetadata, sections, onUpdate, disabled = false, personas }: ContentSectionProps) {
   const [content, setContent] = React.useState(initialContent);
   const [loadingAction, setLoadingAction] = React.useState<ActionType | 'improve' | null>(null);
   const [completionMode, setCompletionMode] = React.useState<'strict' | 'creative'>('creative');
@@ -82,6 +83,7 @@ export function ContentSection({ id, title, initialContent, appMetadata, section
         existingContent: content,
         completionMode,
         otherSectionsContent,
+        personas: JSON.stringify(personas),
       });
 
       if (result.content) {

@@ -10,13 +10,15 @@ import { MetadataWizard } from '@/components/metadata-wizard';
 import { ContentSection, type Section } from '@/components/docucraft-content-section';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { getProject, createProject, updateProject, Project, AppMetadata, RawSuggestions, ALL_POSSIBLE_SECTIONS, BrandingSettings } from '@/lib/projects';
+import { getProject, createProject, updateProject, Project, AppMetadata, RawSuggestions, ALL_POSSIBLE_SECTIONS, BrandingSettings, Persona } from '@/lib/projects';
 import { suggestAppFeatures } from '@/ai/flows/suggest-app-features';
 import { generateContentSection } from '@/ai/flows/generate-content-section';
 import { generateFeatureList } from '@/ai/flows/generate-feature-list';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DocuCraftLogo } from './docucraft-logo';
+import { generatePersonas } from '@/ai/flows/generate-personas';
+import { PersonaSection } from './persona-section';
 
 export function DocuCraftClient({ projectId }: { projectId: string }) {
   const router = useRouter();
@@ -62,6 +64,27 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
     }
   }, [toast, handleSectionUpdate]);
 
+  const generateInitialPersonas = React.useCallback(async (projectToUpdate: Project) => {
+    if (!projectToUpdate.sections.find(s => s.id === 'personas')) return;
+    if (projectToUpdate.personas.length > 0) return; 
+
+    toast({ title: 'Generating user personas...' });
+    try {
+      const result = await generatePersonas({
+        appMetadata: JSON.stringify(projectToUpdate.metadata),
+      });
+      const updated = updateProject(projectToUpdate.id, { personas: result.personas });
+      if (updated) setProject(updated);
+      toast({
+        title: 'User Personas Generated!',
+        description: 'AI has created some initial user personas for you.',
+      });
+    } catch (error) {
+        console.error('Failed to generate personas', error);
+        toast({ title: 'Failed to generate Personas', variant: 'destructive' });
+    }
+  }, [toast]);
+
   const generateAndOrUpdateSections = React.useCallback(async (
     projectId: string,
     metadata: AppMetadata,
@@ -82,7 +105,8 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
             action: 'fill_info',
             existingContent: '',
             completionMode: 'creative',
-            otherSectionsContent: JSON.stringify(sections.filter(s => s.id !== section.id && s.content))
+            otherSectionsContent: JSON.stringify(sections.filter(s => s.id !== section.id && s.content)),
+            personas: JSON.stringify(projectToUpdate.personas),
           });
           return { ...section, content: result.content };
         } catch (error) {
@@ -120,6 +144,7 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
               .then(updatedProject => {
                 if(updatedProject) {
                   regenerateFeatureListContent(updatedProject);
+                  generateInitialPersonas(updatedProject);
                 }
               });
           }
@@ -134,7 +159,7 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
       }
       setIsLoaded(true);
     }
-  }, [projectId, router, toast, searchParams, generateAndOrUpdateSections, regenerateFeatureListContent]);
+  }, [projectId, router, toast, searchParams, generateAndOrUpdateSections, regenerateFeatureListContent, generateInitialPersonas]);
 
   React.useEffect(() => {
     const primaryColor = project?.branding?.primaryColor;
@@ -198,6 +223,31 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
       regenerateFeatureListContent(updated);
     }
   };
+  
+  const handlePersonasUpdate = (personas: Persona[]) => {
+    if (project) {
+        const updated = updateProject(project.id, { personas });
+        if(updated) setProject(updated);
+    }
+  };
+
+  const handleRegeneratePersonas = async () => {
+    if (!project) return;
+    toast({ title: 'Regenerating user personas...' });
+    try {
+      const result = await generatePersonas({
+        appMetadata: JSON.stringify(project.metadata),
+      });
+      handlePersonasUpdate(result.personas);
+      toast({
+        title: 'User Personas Regenerated!',
+        description: 'New personas have been created.',
+      });
+    } catch (error) {
+        console.error('Failed to regenerate personas', error);
+        toast({ title: 'Failed to regenerate Personas', variant: 'destructive' });
+    }
+  };
 
   const handleWizardSubmit = async (data: AppMetadata) => {
     try {
@@ -246,21 +296,25 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
     if(updated) setProject(updated);
   };
 
-  const handleRegenerateInitialSections = async () => {
+  const handleRegenerateInitialContent = async () => {
     if (!project) return;
 
     toast({
-        title: 'Generating sections...',
-        description: 'AI is drafting your Product Vision and App Overview.',
+        title: 'Generating content...',
+        description: 'AI is drafting your initial sections.',
     });
 
-    const updatedProject = await generateAndOrUpdateSections(project.id, project.metadata, ['product-vision', 'overview'], true);
+    await generateAndOrUpdateSections(project.id, project.metadata, ['product-vision', 'overview'], true);
+    
+    await handleRegeneratePersonas();
 
-    if (updatedProject) {
-      toast({
-        title: 'Sections Regenerated!',
-        description: 'Product Vision and App Overview have been updated.',
-      });
+    const currentProject = getProject(project.id);
+    if(currentProject) {
+        await regenerateFeatureListContent(currentProject);
+        toast({
+            title: 'Initial Content Regenerated!',
+            description: 'Your key sections have been updated by the AI.',
+          });
     }
   };
 
@@ -269,6 +323,7 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
   const rawSuggestions = project?.rawSuggestions ?? null;
   const selectedFeatures = project?.featureSuggestions ?? [];
   const branding = project?.branding ?? { logo: '', primaryColor: '' };
+  const personas = project?.personas ?? [];
 
   if (!isLoaded) {
       return (
@@ -310,13 +365,22 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
               onSuggestionsUpdate={handleSuggestionsUpdate}
               onSelectedFeaturesUpdate={handleSelectedFeaturesUpdate}
               onActiveSectionsUpdate={handleActiveSectionsUpdate}
-              onRegenerate={handleRegenerateInitialSections}
+              onRegenerate={handleRegenerateInitialContent}
               rawSuggestions={rawSuggestions}
               selectedFeatures={selectedFeatures}
               activeSections={sections}
               allPossibleSections={ALL_POSSIBLE_SECTIONS}
             />
-            {sections.map((section) => (
+            {sections.find(s => s.id === 'personas') && (
+              <PersonaSection
+                initialPersonas={personas}
+                appMetadata={metadata}
+                onUpdate={handlePersonasUpdate}
+                onRegenerate={handleRegeneratePersonas}
+                disabled={!project}
+              />
+            )}
+            {sections.filter(s => s.id !== 'personas').map((section) => (
               <ContentSection
                 key={`${project?.id}-${section.id}`}
                 id={section.id}
@@ -326,6 +390,7 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
                 onUpdate={handleSectionUpdate}
                 disabled={!project}
                 sections={sections}
+                personas={personas}
               />
             ))}
           </main>

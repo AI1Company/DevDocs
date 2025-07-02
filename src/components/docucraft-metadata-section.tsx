@@ -239,7 +239,7 @@ export function MetadataSection({
                 </Button>
                 <Button type="button" variant="outline" onClick={handleRegenerateClick} disabled={isLoading || isRegenerating}>
                   {isRegenerating ? <Loader2 className="animate-spin" /> : <Sparkles />}
-                  <span>Regenerate Vision & Overview</span>
+                  <span>Regenerate Initial Content</span>
                 </Button>
               </div>
             </form>

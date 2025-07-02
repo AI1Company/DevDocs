@@ -1,6 +1,9 @@
 'use client';
 
 import type { Section } from '@/components/docucraft-content-section';
+import type { Persona } from '@/ai/flows/generate-personas';
+
+export type { Persona };
 
 export type AppMetadata = {
   name: string;
@@ -28,6 +31,7 @@ export interface Project {
   sections: Section[];
   featureSuggestions: string[]; // This will hold the SELECTED features.
   rawSuggestions?: RawSuggestions;
+  personas: Persona[];
   status: ProjectStatus;
   createdAt: string;
   lastModified: string;
@@ -50,7 +54,7 @@ export const ALL_POSSIBLE_SECTIONS: Omit<Section, 'content'>[] = [
     { id: 'deployment', title: 'Deployment Plan' },
 ];
 
-const DEFAULT_SECTION_IDS = ['product-vision', 'overview', 'feature-list', 'ui-ux-specs', 'architecture', 'api-endpoints', 'deployment'];
+const DEFAULT_SECTION_IDS = ['product-vision', 'overview', 'personas', 'feature-list', 'ui-ux-specs', 'architecture', 'api-endpoints', 'deployment'];
 
 
 const getProjectsFromStorage = (): Project[] => {
@@ -90,6 +94,7 @@ export const createProject = (metadata: AppMetadata, suggestions: RawSuggestions
     sections: initialSections,
     rawSuggestions: suggestions,
     featureSuggestions: suggestions.core, // Default to selecting all core features
+    personas: [],
     status: 'In Progress',
     createdAt: now,
     lastModified: now,
