@@ -1,10 +1,13 @@
 import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 import { DocuCraftLogo } from './docucraft-logo';
-import { Cpu, ListChecks, Settings, Code2 } from 'lucide-react';
+import { Cpu, ListChecks, Settings, Code2, ClipboardList, Palette, Waypoints } from 'lucide-react';
 
 const sections = [
   { id: 'metadata', title: 'Project Setup', icon: Settings },
   { id: 'features', title: 'AI Suggestions', icon: ListChecks },
+  { id: 'prd', title: 'PRD', icon: ClipboardList },
+  { id: 'ui-ux-specs', title: 'UI/UX Specs', icon: Palette },
+  { id: 'user-flows', title: 'User Flows', icon: Waypoints },
   { id: 'feature-list', title: 'Feature List', icon: ListChecks },
   { id: 'tech-stack', title: 'Tech Stack', icon: Cpu },
   { id: 'api-design', title: 'API Design', icon: Code2 },

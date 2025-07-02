@@ -19,8 +19,11 @@ export function DocuCraftClient() {
   const [metadata, setMetadata] = React.useState<AppMetadata | null>(null);
   const [featureSuggestions, setFeatureSuggestions] = React.useState<string[]>([]);
   const [sections, setSections] = React.useState<Section[]>([
+    { id: 'prd', title: 'Product Requirements Document', content: '' },
+    { id: 'ui-ux-specs', title: 'UI/UX Specs', content: '' },
+    { id: 'user-flows', title: 'User Flows', content: '' },
     { id: 'feature-list', title: 'Feature List', content: '' },
-    { id: 'tech-stack', title: 'Tech Stack', content: '' },
+    { id: 'tech-stack', title: 'Precise Tech Stack', content: '' },
     { id: 'api-design', title: 'API Design', content: '' },
   ]);
 
