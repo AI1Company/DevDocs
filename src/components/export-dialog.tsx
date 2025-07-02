@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { Project } from '@/lib/projects';
 import { FileDown, FileText, FileCode, FileUp, Loader2 } from 'lucide-react';
 import { saveAs } from 'file-saver';
-import htmlToDocx from 'html-to-docx';
+import { generateDocx } from '@/app/actions/export';
 
 interface ExportDialogProps {
   project: Project | null;
@@ -95,10 +95,15 @@ export function ExportDialog({ project, children }: ExportDialogProps) {
             htmlContent += '</body></html>';
 
             if (format === 'DOCX') {
-                const docxBlob = await htmlToDocx(htmlContent, undefined, {
-                    margins: { top: 720, bottom: 720, left: 720, right: 720 },
-                });
-                saveAs(docxBlob, `${fileName}.docx`);
+                const base64 = await generateDocx(htmlContent);
+                const byteCharacters = atob(base64);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+                saveAs(blob, `${fileName}.docx`);
             } else if (format === 'PDF') {
                 const iframe = document.createElement('iframe');
                 iframe.style.position = 'absolute';
