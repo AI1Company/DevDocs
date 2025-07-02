@@ -1,7 +1,14 @@
 'use client';
 
-import { AppMetadata } from "@/components/docucraft-client";
 import type { Section } from '@/components/docucraft-content-section';
+
+export type AppMetadata = {
+  name: string;
+  description: string;
+  industry: string;
+  targetUsers: string;
+  platform: 'Web' | 'Mobile' | 'SaaS' | 'Desktop';
+};
 
 export type ProjectStatus = 'In Progress' | 'Completed';
 
@@ -35,7 +42,7 @@ export const getProject = (id: string): Project | undefined => {
   return projects.find((p) => p.id === id);
 };
 
-export const createProject = (metadata: AppMetadata): Project => {
+export const createProject = (metadata: AppMetadata, suggestions: string[] = []): Project => {
   const projects = getProjectsFromStorage();
   const now = new Date().toISOString();
   const newProject: Project = {
@@ -49,7 +56,7 @@ export const createProject = (metadata: AppMetadata): Project => {
         { id: 'tech-stack', title: 'Precise Tech Stack', content: '' },
         { id: 'api-design', title: 'API Design', content: '' },
     ],
-    featureSuggestions: [],
+    featureSuggestions: suggestions,
     status: 'In Progress',
     createdAt: now,
     lastModified: now,

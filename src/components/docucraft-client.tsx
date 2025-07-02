@@ -6,18 +6,15 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { DocuCraftSidebar } from '@/components/docucraft-sidebar';
 import { DocuCraftToolbar } from '@/components/docucraft-toolbar';
 import { MetadataSection } from '@/components/docucraft-metadata-section';
+import { MetadataWizard } from '@/components/metadata-wizard';
 import { ContentSection, type Section } from '@/components/docucraft-content-section';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { getProject, createProject, updateProject, Project } from '@/lib/projects';
+import { getProject, createProject, updateProject, Project, AppMetadata } from '@/lib/projects';
+import { suggestAppFeatures } from '@/ai/flows/suggest-app-features';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-
-export type AppMetadata = {
-  name: string;
-  description: string;
-  industry: string;
-};
+import { DocuCraftLogo } from './docucraft-logo';
 
 const defaultSections: Section[] = [
     { id: 'prd', title: 'Product Requirements Document', content: '' },
@@ -27,7 +24,6 @@ const defaultSections: Section[] = [
     { id: 'tech-stack', title: 'Precise Tech Stack', content: '' },
     { id: 'api-design', title: 'API Design', content: '' },
 ];
-
 
 export function DocuCraftClient({ projectId }: { projectId: string }) {
   const router = useRouter();
@@ -57,29 +53,38 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
     }
   }, [projectId, router, toast]);
 
-  const handleMetadataSubmit = (data: AppMetadata) => {
+  const handleMetadataUpdate = (data: AppMetadata) => {
     if (project) {
-        // Update existing project
         const updated = updateProject(project.id, { metadata: data });
         if(updated) setProject(updated);
-    } else {
-        // Create new project
-        const newProject = createProject(data);
-        setProject(newProject);
-        // Redirect to the new project's URL
-        router.replace(`/project/${newProject.id}`);
     }
   };
 
-  const handleSuggestions = (suggestions: string[]) => {
+  const handleSuggestionsUpdate = (suggestions: string[]) => {
     if (!project?.id) return;
     const updated = updateProject(project.id, { featureSuggestions: suggestions });
     if(updated) setProject(updated);
   };
 
+  const handleWizardSubmit = async (data: AppMetadata) => {
+    try {
+      const { features } = await suggestAppFeatures(data);
+      const newProject = createProject(data, features);
+      router.replace(`/project/${newProject.id}`);
+    } catch (error) {
+      console.error('Error during project creation:', error);
+      toast({
+        title: 'Creation Failed',
+        description: 'Could not create project. Please try again.',
+        variant: 'destructive',
+      });
+      throw error; // Re-throw to allow wizard to stop its loading spinner
+    }
+  };
+
   const handleSectionUpdate = (id: string, content: string) => {
     if (!project?.id) return;
-    const newSections = project.sections.map((section) =>
+    const newSections = (project.sections ?? []).map((section) =>
       section.id === id ? { ...section, content } : section
     );
     const updated = updateProject(project.id, { sections: newSections });
@@ -99,6 +104,15 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
       )
   }
 
+  if (!project && projectId === 'new') {
+    return (
+      <main className="flex w-full min-h-screen flex-col items-center justify-center bg-muted/40 p-4 gap-8">
+        <DocuCraftLogo />
+        <MetadataWizard onSubmit={handleWizardSubmit} />
+      </main>
+    );
+  }
+
   return (
     <SidebarProvider>
       <DocuCraftSidebar />
@@ -115,8 +129,8 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
             <MetadataSection
               key={project?.id} // Add key to force re-render on project change
               initialData={metadata}
-              onSubmit={handleMetadataSubmit}
-              onSuggestions={handleSuggestions}
+              onSubmit={handleMetadataUpdate}
+              onSuggestions={handleSuggestionsUpdate}
               suggestions={featureSuggestions}
             />
             {sections.map((section) => (

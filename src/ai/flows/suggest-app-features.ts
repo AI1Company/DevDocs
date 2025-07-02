@@ -16,6 +16,8 @@ const SuggestAppFeaturesInputSchema = z.object({
   name: z.string().describe('The name of the application.'),
   description: z.string().describe('A brief description of the application.'),
   industry: z.string().describe('The industry the application belongs to.'),
+  targetUsers: z.string().describe('A description of the target users for the application.'),
+  platform: z.enum(['Web', 'Mobile', 'SaaS', 'Desktop']).describe('The platform the application will be built for (e.g., Web, Mobile).'),
 });
 export type SuggestAppFeaturesInput = z.infer<typeof SuggestAppFeaturesInputSchema>;
 
@@ -32,13 +34,15 @@ const prompt = ai.definePrompt({
   name: 'suggestAppFeaturesPrompt',
   input: {schema: SuggestAppFeaturesInputSchema},
   output: {schema: SuggestAppFeaturesOutputSchema},
-  prompt: `You are an AI assistant that suggests features for a given application based on its name, description, and industry.
+  prompt: `You are an AI assistant that suggests features for a given application based on its details.
 
   Application Name: {{{name}}}
   Description: {{{description}}}
   Industry: {{{industry}}}
+  Target Users: {{{targetUsers}}}
+  Platform: {{{platform}}}
 
-  Suggest a list of relevant and useful features for this application. The features should be concise and easy to understand.
+  Suggest a list of relevant and useful features for this application. The features should be concise, easy to understand, and tailored to the provided application details.
   Return the features as a JSON array of strings.
   `,
 });
