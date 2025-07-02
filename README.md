@@ -1,3 +1,5 @@
+![Dev Docs](https://github.com/user-attachments/assets/95de17fb-443c-447b-86b2-5a9411473142)
+
 # DocuCraft: AI-Powered Project Documentation
 
 DocuCraft is an innovative application designed to streamline the process of creating comprehensive project documentation. Leveraging the power of AI, it assists users in generating, structuring, and refining various sections of a project document, from initial vision to final deployment plans.
