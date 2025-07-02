@@ -58,8 +58,8 @@ To get this project up and running on your local machine, follow these steps.
 
 1.  **Clone the repository:**
     ```bash
-    git clone <repository-url>
-    cd <repository-directory>
+    git clone https://github.com/AI1Company/DevDocs.git
+    cd DevDocs
     ```
 
 2.  **Install dependencies:**
