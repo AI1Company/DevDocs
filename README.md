@@ -91,3 +91,14 @@ To get this project up and running on your local machine, follow these steps.
 
 5.  **Open the app:**
     Navigate to `http://localhost:9002` in your web browser to start using DocuCraft AI.
+
+## Screenshots
+![Project_Specific_Templates](https://github.com/user-attachments/assets/e4007fed-d4d4-4d36-80c2-e9c2c9ff1ee8)   
+![Export_Options](https://github.com/user-attachments/assets/a0b6fb33-1b99-4322-b270-86d9dbabcaaf)   ![Architecture_Design](https://github.com/user-attachments/assets/792558e6-9300-4e6f-9cdd-641c1d4c99b8)
+![Document_Structures](https://github.com/user-attachments/assets/67026239-4def-4ead-a61b-1e05ad5b55e3)
+![AI-suggested_Features](https://github.com/user-attachments/assets/afc5525d-fe42-49ec-979a-cbe5e31ad8ae)
+
+
+
+
+
