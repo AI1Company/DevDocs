@@ -66,20 +66,27 @@ const DEFAULT_SECTION_IDS = [
   "deployment",
 ];
 
-export const getProjects = async (): Promise<Project[]> => {
+export const getProjects = async (userId?: string): Promise<Project[]> => {
   try {
-    const projects = await sql`
-      SELECT * FROM projects 
-      ORDER BY last_modified DESC
-    `;
+    const projects = userId
+      ? await sql`
+          SELECT * FROM projects
+          WHERE user_id = ${userId}
+          ORDER BY last_modified DESC
+        `
+      : await sql`
+          SELECT * FROM projects
+          WHERE user_id IS NULL
+          ORDER BY last_modified DESC
+        `;
 
     const result: Project[] = [];
 
     for (const project of projects) {
       // Get sections
       const sections = await sql`
-        SELECT section_id as id, title, content 
-        FROM sections 
+        SELECT section_id as id, title, content
+        FROM sections
         WHERE project_id = ${project.id}
         ORDER BY section_id
       `;
@@ -87,14 +94,14 @@ export const getProjects = async (): Promise<Project[]> => {
       // Get personas
       const personas = await sql`
         SELECT name, age_range, description, goals, pain_points, tech_savviness
-        FROM personas 
+        FROM personas
         WHERE project_id = ${project.id}
       `;
 
       // Get features
       const features = await sql`
         SELECT feature_text, is_core, is_selected
-        FROM feature_suggestions 
+        FROM feature_suggestions
         WHERE project_id = ${project.id}
         ORDER BY is_core DESC, feature_text
       `;
@@ -145,9 +152,12 @@ export const getProjects = async (): Promise<Project[]> => {
   }
 };
 
-export const getProject = async (id: string): Promise<Project | undefined> => {
+export const getProject = async (
+  id: string,
+  userId?: string,
+): Promise<Project | undefined> => {
   try {
-    const projects = await getProjects();
+    const projects = await getProjects(userId);
     return projects.find((p) => p.id === id);
   } catch (error) {
     console.error("Error fetching project:", error);
@@ -158,6 +168,7 @@ export const getProject = async (id: string): Promise<Project | undefined> => {
 export const createProject = async (
   metadata: AppMetadata,
   suggestions: RawSuggestions,
+  userId?: string,
 ): Promise<Project> => {
   const projectId = `proj_${Date.now()}`;
   const now = new Date().toISOString();
@@ -166,12 +177,12 @@ export const createProject = async (
     // Insert project
     await sql`
       INSERT INTO projects (
-        id, name, description, industry, target_users, platform, 
-        created_at, last_modified
+        id, name, description, industry, target_users, platform,
+        created_at, last_modified, user_id
       ) VALUES (
-        ${projectId}, ${metadata.name}, ${metadata.description}, 
+        ${projectId}, ${metadata.name}, ${metadata.description},
         ${metadata.industry}, ${metadata.targetUsers}, ${metadata.platform},
-        ${now}, ${now}
+        ${now}, ${now}, ${userId || null}
       )
     `;
 
@@ -260,7 +271,7 @@ export const updateProject = async (
     if (data.sections) {
       for (const section of data.sections) {
         await sql`
-          UPDATE sections SET 
+          UPDATE sections SET
             content = ${section.content}
           WHERE project_id = ${id} AND section_id = ${section.id}
         `;
@@ -288,7 +299,7 @@ export const updateProject = async (
     if (data.featureSuggestions) {
       // Reset all selections
       await sql`
-        UPDATE feature_suggestions SET is_selected = false 
+        UPDATE feature_suggestions SET is_selected = false
         WHERE project_id = ${id}
       `;
 
@@ -324,7 +335,7 @@ export const renameProject = async (
   try {
     const now = new Date().toISOString();
     await sql`
-      UPDATE projects SET 
+      UPDATE projects SET
         name = ${newName},
         last_modified = ${now}
       WHERE id = ${id}
@@ -353,10 +364,10 @@ export const migrateFromLocalStorage = async (): Promise<void> => {
       // Insert project
       await sql`
         INSERT INTO projects (
-          id, name, description, industry, target_users, platform, 
+          id, name, description, industry, target_users, platform,
           status, created_at, last_modified, logo_data_url, primary_color
         ) VALUES (
-          ${project.id}, ${project.metadata.name}, ${project.metadata.description}, 
+          ${project.id}, ${project.metadata.name}, ${project.metadata.description},
           ${project.metadata.industry}, ${project.metadata.targetUsers}, ${project.metadata.platform},
           ${project.status}, ${project.createdAt}, ${project.lastModified},
           ${project.branding?.logo || ""}, ${project.branding?.primaryColor || ""}
