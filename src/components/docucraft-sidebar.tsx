@@ -76,7 +76,7 @@ export function DocuCraftSidebar({
               <SidebarMenuButton
                 onClick={() => scrollToSection(section.id)}
                 className="w-full justify-start"
-                variant="ghost"
+                variant="default"
               >
                 <section.icon className="h-4 w-4" />
                 <span>{section.title}</span>
@@ -91,7 +91,7 @@ export function DocuCraftSidebar({
                 <SidebarMenuButton
                   onClick={() => scrollToSection(section.id)}
                   className="w-full justify-start"
-                  variant="ghost"
+                  variant="default"
                 >
                   <Icon className="h-4 w-4" />
                   <span>{section.title}</span>
