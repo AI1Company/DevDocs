@@ -14,10 +14,13 @@ import { ProjectCard } from "./project-card";
 import { Button } from "@/components/ui/button";
 import { DocuCraftLogo } from "./docucraft-logo";
 import { ThemeToggle } from "./theme-toggle";
+import { UserAuthButton } from "./user-auth-button";
+import { useUser } from "@stackframe/stack";
 
 export function ProjectDashboard() {
   const [projects, setProjects] = React.useState<Project[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const user = useUser();
 
   React.useEffect(() => {
     // Load projects from database and migrate localStorage data if needed
@@ -65,12 +68,15 @@ export function ProjectDashboard() {
         <DocuCraftLogo />
         <div className="ml-auto flex items-center gap-4">
           <ThemeToggle />
-          <Button asChild>
-            <Link href="/project/new">
-              <PlusCircle className="h-4 w-4" />
-              Create New Project
-            </Link>
-          </Button>
+          <UserAuthButton />
+          {user && (
+            <Button asChild>
+              <Link href="/project/new">
+                <PlusCircle className="h-4 w-4" />
+                Create New Project
+              </Link>
+            </Button>
+          )}
         </div>
       </header>
       <main className="flex flex-1 flex-col gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
