@@ -17,12 +17,11 @@ const nextConfig: NextConfig = {
         pathname: "/**",
       },
     ],
-    unoptimized: true, // Required for static export
   },
-  // Netlify-specific configuration
-  trailingSlash: false,
-  output: "export",
-  distDir: "out",
+  // Netlify-specific configuration for server-side features
+  experimental: {
+    serverActions: true,
+  },
 };
 
 export default nextConfig;
