@@ -361,7 +361,7 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
         if (featureSectionIndex > -1) {
           newProject.sections[featureSectionIndex].content = result.content;
         }
-        updateProject(newProject.id, { sections: newProject.sections });
+        await updateProject(newProject.id, { sections: newProject.sections });
       }
 
       router.replace(`/project/${newProject.id}?generate=true`);
@@ -376,7 +376,7 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
     }
   };
 
-  const handleActiveSectionsUpdate = (newActiveIds: string[]) => {
+  const handleActiveSectionsUpdate = async (newActiveIds: string[]) => {
     if (!project) return;
 
     const currentSections = project.sections ?? [];
@@ -389,8 +389,14 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
       return { ...sectionBlueprint, content: "" };
     });
 
-    const updated = updateProject(project.id, { sections: newSections });
-    if (updated) setProject(updated);
+    try {
+      const updated = await updateProject(project.id, {
+        sections: newSections,
+      });
+      if (updated) setProject(updated);
+    } catch (error) {
+      console.error("Error updating sections:", error);
+    }
   };
 
   const handleRegenerateInitialContent = async () => {
