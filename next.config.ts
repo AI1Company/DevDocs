@@ -18,10 +18,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Netlify-specific configuration for server-side features
-  experimental: {
-    serverActions: true,
-  },
+  // Clean configuration for deployment
 };
 
 export default nextConfig;
