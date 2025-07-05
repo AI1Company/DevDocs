@@ -1,26 +1,9 @@
 [build]
   command = "npm run build"
-  functions = "netlify/functions"
   publish = ".next"
 
 [build.environment]
   NODE_VERSION = "18"
-  NETLIFY_NEXT_PLUGIN_SKIP_EDGE_MIDDLEWARE = "true"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
-
-[functions]
-  node_bundler = "esbuild"
-
-[[headers]]
-  for = "/api/*"
-  [headers.values]
-    Access-Control-Allow-Origin = "*"
-    Access-Control-Allow-Headers = "Content-Type, Authorization"
-    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
-
-[dev]
-  command = "npm run dev"
-  port = 9002
-  targetPort = 9002
