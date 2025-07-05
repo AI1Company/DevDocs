@@ -258,39 +258,57 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
     };
   }, [project?.branding?.primaryColor]);
 
-  const handleMetadataUpdate = (data: AppMetadata) => {
+  const handleMetadataUpdate = async (data: AppMetadata) => {
     if (project) {
-      const updated = updateProject(project.id, { metadata: data });
-      if (updated) setProject(updated);
+      try {
+        const updated = await updateProject(project.id, { metadata: data });
+        if (updated) setProject(updated);
+      } catch (error) {
+        console.error("Error updating metadata:", error);
+      }
     }
   };
 
-  const handleBrandingUpdate = (branding: BrandingSettings) => {
+  const handleBrandingUpdate = async (branding: BrandingSettings) => {
     if (project) {
-      const updated = updateProject(project.id, { branding });
-      if (updated) setProject(updated);
+      try {
+        const updated = await updateProject(project.id, { branding });
+        if (updated) setProject(updated);
+      } catch (error) {
+        console.error("Error updating branding:", error);
+      }
     }
   };
 
-  const handleSuggestionsUpdate = (suggestions: RawSuggestions) => {
+  const handleSuggestionsUpdate = async (suggestions: RawSuggestions) => {
     if (!project?.id) return;
     const defaultFeatures = suggestions.core;
-    const updated = updateProject(project.id, {
-      rawSuggestions: suggestions,
-      featureSuggestions: defaultFeatures,
-    });
-    if (updated) {
-      setProject(updated);
-      regenerateFeatureListContent(updated);
+    try {
+      const updated = await updateProject(project.id, {
+        rawSuggestions: suggestions,
+        featureSuggestions: defaultFeatures,
+      });
+      if (updated) {
+        setProject(updated);
+        regenerateFeatureListContent(updated);
+      }
+    } catch (error) {
+      console.error("Error updating suggestions:", error);
     }
   };
 
-  const handleSelectedFeaturesUpdate = (features: string[]) => {
+  const handleSelectedFeaturesUpdate = async (features: string[]) => {
     if (!project?.id) return;
-    const updated = updateProject(project.id, { featureSuggestions: features });
-    if (updated) {
-      setProject(updated);
-      regenerateFeatureListContent(updated);
+    try {
+      const updated = await updateProject(project.id, {
+        featureSuggestions: features,
+      });
+      if (updated) {
+        setProject(updated);
+        regenerateFeatureListContent(updated);
+      }
+    } catch (error) {
+      console.error("Error updating features:", error);
     }
   };
 
