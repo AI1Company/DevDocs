@@ -13,4 +13,8 @@ STACK_SECRET_SERVER_KEY=ssk_9dsxjerae3cvhc8mcx1372h2zf2a41z7je9sz9s88scz0
 NEXT_PUBLIC_APP_URL=https://your-netlify-url.netlify.app
 NODE_ENV=production
 
+# Netlify automatically provides these (don't set manually):
+# NETLIFY_URL - automatically set by Netlify
+# URL - automatically set by Netlify
+
 # Add any additional environment variables your app needs
