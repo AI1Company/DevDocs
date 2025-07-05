@@ -21,4 +21,9 @@ export const stackServerApp = new StackServerApp({
     passwordReset: "/handler/password-reset",
     accountSettings: "/handler/account-settings",
   },
+  // Add serverless compatibility
+  baseUrl:
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.NETLIFY_URL ||
+    "http://localhost:3000",
 });
