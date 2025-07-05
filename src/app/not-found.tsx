@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { DocuCraftLogo } from "@/components/docucraft-logo";
 
+export const metadata = {
+  title: "404 - Page Not Found",
+  description: "The page you're looking for doesn't exist.",
+};
+
 export default function NotFound() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4">
