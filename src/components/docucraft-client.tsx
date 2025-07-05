@@ -169,7 +169,9 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
       });
 
       const updatedSections = await Promise.all(updatedSectionsPromises);
-      const updated = await updateProject(projectId, { sections: updatedSections });
+      const updated = await updateProject(projectId, {
+        sections: updatedSections,
+      });
       if (updated) setProject(updated);
       return updated;
     },
@@ -209,6 +211,7 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
           }
           setIsLoaded(true);
         });
+      }
     }
   }, [
     projectId,
