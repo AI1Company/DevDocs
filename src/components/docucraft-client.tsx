@@ -42,19 +42,21 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
   const [isLoaded, setIsLoaded] = React.useState(false);
 
   const handleSectionUpdate = React.useCallback(
-    (id: string, content: string) => {
-      setProject((currentProject) => {
-        if (!currentProject?.id) return currentProject;
-        const newSections = (currentProject.sections ?? []).map((section) =>
-          section.id === id ? { ...section, content } : section,
-        );
-        const updated = updateProject(currentProject.id, {
+    async (id: string, content: string) => {
+      if (!project?.id) return;
+      const newSections = (project.sections ?? []).map((section) =>
+        section.id === id ? { ...section, content } : section,
+      );
+      try {
+        const updated = await updateProject(project.id, {
           sections: newSections,
         });
-        return updated || currentProject;
-      });
+        if (updated) setProject(updated);
+      } catch (error) {
+        console.error("Error updating section:", error);
+      }
     },
-    [],
+    [project],
   );
 
   const regenerateFeatureListContent = React.useCallback(
