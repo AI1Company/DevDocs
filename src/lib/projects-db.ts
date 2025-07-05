@@ -93,7 +93,7 @@ export const getProjects = async (userId?: string): Promise<Project[]> => {
 
       // Get personas
       const personas = await sql`
-        SELECT name, age_range, description, goals, pain_points, tech_savviness
+        SELECT name, age_range as demographics, goals, pain_points as frustrations
         FROM personas
         WHERE project_id = ${project.id}
       `;
@@ -129,11 +129,9 @@ export const getProjects = async (userId?: string): Promise<Project[]> => {
         rawSuggestions,
         personas: personas.map((p) => ({
           name: p.name,
-          ageRange: p.age_range || "",
-          description: p.description || "",
-          goals: p.goals || "",
-          painPoints: p.pain_points || "",
-          techSavviness: p.tech_savviness || "",
+          demographics: p.demographics || "",
+          goals: p.goals ? JSON.parse(p.goals) : [],
+          frustrations: p.frustrations ? JSON.parse(p.frustrations) : [],
         })),
         status: project.status,
         createdAt: project.created_at,
@@ -286,10 +284,10 @@ export const updateProject = async (
       for (const persona of data.personas) {
         await sql`
           INSERT INTO personas (
-            project_id, name, age_range, description, goals, pain_points, tech_savviness
+            project_id, name, age_range, goals, pain_points
           ) VALUES (
-            ${id}, ${persona.name}, ${persona.ageRange}, ${persona.description},
-            ${persona.goals}, ${persona.painPoints}, ${persona.techSavviness}
+            ${id}, ${persona.name}, ${persona.demographics},
+            ${JSON.stringify(persona.goals)}, ${JSON.stringify(persona.frustrations)}
           )
         `;
       }
