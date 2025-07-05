@@ -1,0 +1,16 @@
+# Netlify Environment Variables Configuration
+# Copy these to your Netlify site's environment variables section
+
+# Neon Database Configuration
+DATABASE_URL=postgresql://neondb_owner:npg_KM4id5ogWehy@ep-withered-night-a8nrhwnx-pooler.eastus2.azure.neon.tech/neondb?sslmode=require
+
+# Stack Auth Configuration
+NEXT_PUBLIC_STACK_PROJECT_ID=8ee1c52b-622e-467a-85e2-2d3dd5fb3efe
+NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY=pck_kwhhsrwrvzr5183y8gzpw4r00g7vnryyexw2ryj6q4cw0
+STACK_SECRET_SERVER_KEY=ssk_9dsxjerae3cvhc8mcx1372h2zf2a41z7je9sz9s88scz0
+
+# Next.js Configuration
+NEXT_PUBLIC_APP_URL=https://your-netlify-url.netlify.app
+NODE_ENV=production
+
+# Add any additional environment variables your app needs
