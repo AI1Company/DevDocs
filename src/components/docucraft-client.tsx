@@ -416,7 +416,7 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
 
     await handleRegeneratePersonas();
 
-    const currentProject = getProject(project.id);
+    const currentProject = await getProject(project.id);
     if (currentProject) {
       await regenerateFeatureListContent(currentProject);
       toast({
