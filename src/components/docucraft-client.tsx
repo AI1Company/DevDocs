@@ -130,7 +130,7 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
       sectionsToUpdate: string[],
       forceRegenerate: boolean,
     ) => {
-      const projectToUpdate = await getProject(projectId);
+      const projectToUpdate = await getProject(projectId, user?.id);
       if (!projectToUpdate) return;
 
       const sections = projectToUpdate.sections ?? [];
@@ -185,7 +185,7 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
       if (projectId === "new") {
         setProject(null);
       } else {
-        getProject(projectId).then((existingProject) => {
+        getProject(projectId, user?.id).then((existingProject) => {
           if (existingProject) {
             setProject(existingProject);
             const shouldGenerate = searchParams.get("generate") === "true";
@@ -346,7 +346,7 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
   const handleWizardSubmit = async (data: AppMetadata) => {
     try {
       const suggestions = await suggestAppFeatures(data);
-      const newProject = await createProject(data, suggestions);
+      const newProject = await createProject(data, suggestions, user?.id);
 
       // Pre-generate feature list content for a better first-run experience
       if (
@@ -418,7 +418,7 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
 
     await handleRegeneratePersonas();
 
-    const currentProject = await getProject(project.id);
+    const currentProject = await getProject(project.id, user?.id);
     if (currentProject) {
       await regenerateFeatureListContent(currentProject);
       toast({
