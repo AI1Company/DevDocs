@@ -45,7 +45,7 @@ export function ProjectDashboard() {
   const handleRenameProject = async (id: string, newName: string) => {
     try {
       await renameProject(id, newName);
-      const updatedProjects = await getProjects();
+      const updatedProjects = await getProjects(user?.id);
       setProjects(updatedProjects); // Refresh list
     } catch (error) {
       console.error("Error renaming project:", error);
@@ -55,7 +55,7 @@ export function ProjectDashboard() {
   const handleDeleteProject = async (id: string) => {
     try {
       await deleteProject(id);
-      const updatedProjects = await getProjects();
+      const updatedProjects = await getProjects(user?.id);
       setProjects(updatedProjects); // Refresh list
     } catch (error) {
       console.error("Error deleting project:", error);
