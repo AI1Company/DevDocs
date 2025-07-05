@@ -105,7 +105,7 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
         const result = await generatePersonas({
           appMetadata: JSON.stringify(projectToUpdate.metadata),
         });
-        const updated = updateProject(projectToUpdate.id, {
+        const updated = await updateProject(projectToUpdate.id, {
           personas: result.personas,
         });
         if (updated) setProject(updated);
@@ -128,7 +128,7 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
       sectionsToUpdate: string[],
       forceRegenerate: boolean,
     ) => {
-      const projectToUpdate = getProject(projectId);
+      const projectToUpdate = await getProject(projectId);
       if (!projectToUpdate) return;
 
       const sections = projectToUpdate.sections ?? [];
