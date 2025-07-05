@@ -184,31 +184,31 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
         getProject(projectId).then((existingProject) => {
           if (existingProject) {
             setProject(existingProject);
-          const shouldGenerate = searchParams.get("generate") === "true";
-          if (shouldGenerate) {
-            router.replace(`/project/${projectId}`, { scroll: false });
-            generateAndOrUpdateSections(
-              existingProject.id,
-              existingProject.metadata,
-              ["product-vision", "overview"],
-              false,
-            ).then((updatedProject) => {
-              if (updatedProject) {
-                regenerateFeatureListContent(updatedProject);
-                generateInitialPersonas(updatedProject);
-              }
+            const shouldGenerate = searchParams.get("generate") === "true";
+            if (shouldGenerate) {
+              router.replace(`/project/${projectId}`, { scroll: false });
+              generateAndOrUpdateSections(
+                existingProject.id,
+                existingProject.metadata,
+                ["product-vision", "overview"],
+                false,
+              ).then((updatedProject) => {
+                if (updatedProject) {
+                  regenerateFeatureListContent(updatedProject);
+                  generateInitialPersonas(updatedProject);
+                }
+              });
+            }
+          } else {
+            toast({
+              title: "Project not found",
+              description: "The requested project does not exist.",
+              variant: "destructive",
             });
+            router.push("/");
           }
-        } else {
-          toast({
-            title: "Project not found",
-            description: "The requested project does not exist.",
-            variant: "destructive",
-          });
-          router.push("/");
-        }
-      }
-      setIsLoaded(true);
+          setIsLoaded(true);
+        });
     }
   }, [
     projectId,
