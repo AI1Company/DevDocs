@@ -169,7 +169,7 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
       });
 
       const updatedSections = await Promise.all(updatedSectionsPromises);
-      const updated = updateProject(projectId, { sections: updatedSections });
+      const updated = await updateProject(projectId, { sections: updatedSections });
       if (updated) setProject(updated);
       return updated;
     },
@@ -181,9 +181,9 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
       if (projectId === "new") {
         setProject(null);
       } else {
-        const existingProject = getProject(projectId);
-        if (existingProject) {
-          setProject(existingProject);
+        getProject(projectId).then((existingProject) => {
+          if (existingProject) {
+            setProject(existingProject);
           const shouldGenerate = searchParams.get("generate") === "true";
           if (shouldGenerate) {
             router.replace(`/project/${projectId}`, { scroll: false });
