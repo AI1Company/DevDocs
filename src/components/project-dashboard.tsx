@@ -30,7 +30,7 @@ export function ProjectDashboard() {
         await migrateFromLocalStorage();
 
         // Then load from database
-        const dbProjects = await getProjects();
+        const dbProjects = await getProjects(user?.id);
         setProjects(dbProjects);
       } catch (error) {
         console.error("Error loading projects:", error);
