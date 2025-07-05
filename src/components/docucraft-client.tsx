@@ -312,10 +312,14 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
     }
   };
 
-  const handlePersonasUpdate = (personas: Persona[]) => {
+  const handlePersonasUpdate = async (personas: Persona[]) => {
     if (project) {
-      const updated = updateProject(project.id, { personas });
-      if (updated) setProject(updated);
+      try {
+        const updated = await updateProject(project.id, { personas });
+        if (updated) setProject(updated);
+      } catch (error) {
+        console.error("Error updating personas:", error);
+      }
     }
   };
 
@@ -340,7 +344,7 @@ export function DocuCraftClient({ projectId }: { projectId: string }) {
   const handleWizardSubmit = async (data: AppMetadata) => {
     try {
       const suggestions = await suggestAppFeatures(data);
-      const newProject = createProject(data, suggestions);
+      const newProject = await createProject(data, suggestions);
 
       // Pre-generate feature list content for a better first-run experience
       if (
