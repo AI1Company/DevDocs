@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { DocuCraftLogo } from "@/components/docucraft-logo";
 
 export default function Handler() {
+  const router = useRouter();
+
   useEffect(() => {
     // Redirect to home for now during deployment
-    window.location.href = "/";
-  }, []);
+    router.push("/");
+  }, [router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4">
