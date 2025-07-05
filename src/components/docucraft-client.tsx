@@ -32,11 +32,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { DocuCraftLogo } from "./docucraft-logo";
 import { generatePersonas } from "@/ai/flows/generate-personas";
 import { PersonaSection } from "./persona-section";
+import { useUser } from "@stackframe/stack";
 
 export function DocuCraftClient({ projectId }: { projectId: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const user = useUser();
 
   const [project, setProject] = React.useState<Project | null>(null);
   const [isLoaded, setIsLoaded] = React.useState(false);
