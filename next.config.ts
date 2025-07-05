@@ -17,13 +17,12 @@ const nextConfig: NextConfig = {
         pathname: "/**",
       },
     ],
+    unoptimized: true, // Required for static export
   },
   // Netlify-specific configuration
   trailingSlash: false,
-  output: "standalone",
-  experimental: {
-    outputFileTracingRoot: undefined,
-  },
+  output: "export",
+  distDir: "out",
 };
 
 export default nextConfig;
