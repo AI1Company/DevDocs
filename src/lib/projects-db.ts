@@ -384,10 +384,10 @@ export const migrateFromLocalStorage = async (): Promise<void> => {
       for (const persona of project.personas) {
         await sql`
           INSERT INTO personas (
-            project_id, name, age_range, description, goals, pain_points, tech_savviness
+            project_id, name, age_range, goals, pain_points
           ) VALUES (
-            ${project.id}, ${persona.name}, ${persona.ageRange}, ${persona.description},
-            ${persona.goals}, ${persona.painPoints}, ${persona.techSavviness}
+            ${project.id}, ${persona.name}, ${(persona as any).demographics || (persona as any).ageRange || ""},
+            ${JSON.stringify((persona as any).goals || [])}, ${JSON.stringify((persona as any).frustrations || (persona as any).painPoints || [])}
           )
         `;
       }
